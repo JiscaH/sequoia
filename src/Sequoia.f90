@@ -2085,7 +2085,7 @@ integer, intent(IN) :: genofr(ng*specsint(1)), parentsrf(2*ng), dumparrf(2*ng), 
 integer, intent(INOUT) :: byrf(3*ng)
 double precision, intent(INOUT) :: llrf(nrels*np)
 integer :: x, ij(2), kij(2), a, m, SexRF(ng), LYRF(ng), curPar(2,2), &
-  Sex_ij(2), psex(np, 2), pdrop(np, 2), BYtmp(2), z, chunk_printdot(40), mates_tmp(2,2)!, fclx
+  Sex_ij(2), psex(np, 2), pdrop(np, 2), BYtmp(2), chunk_printdot(40), mates_tmp(2,2)
 double precision :: LLpair(np, nrels), LLg(7), LLa(7), LLdup
 double precision, allocatable, dimension(:,:,:) :: IndBYtmp
 logical :: no_can_do, tmp_drop_mates(2)
@@ -2801,6 +2801,9 @@ OK = .FALSE.
 
 if (A==B .and. (A>0 .or. kA==kB))   return
 
+if (B<0 .and. .not. (kB==1 .or. kB==2))  call ErStop("ChkValidGP: kB must be 1 or 2 if B<0", .TRUE.)
+
+
 if (A>0 .and. B>0) then
   if (AgeDiff(A, B) <= 0)  return   ! B younger than A
 endif
@@ -2831,8 +2834,6 @@ if (ALR == impossible)  return
 call GetAncest(A, kA, AncA)
 if (kB==1 .or. kB==2) then
   kBx = (/kB,kB/)
-else if (B<0) then
-  call ErStop("ChkValidGP: kB must be 1 or 2 if B<0", .TRUE.)
 else
   kBx = (/1,2/)   ! also covers case of hermaprodites
 endif
@@ -3066,7 +3067,7 @@ integer, intent(IN) :: BYrank(nInd)
 integer, parameter :: mxxCP = 5*mxCP
 integer :: i, j, x, y, k, CandPar(mxxCP, 2), nCP(2), curPar(2), SexTmp(2), &
   CP_rank(mxxCP), CP_tmp(mxxCP)
-double precision :: ALR, LLR_CP(mxxCP), QPO_ij
+double precision :: ALR, LLR_CP(mxxCP)
 logical :: AncOK
 
 AncOK = .FALSE.
@@ -3196,7 +3197,7 @@ implicit none
 
 integer, intent(IN) :: A, kAIN, nCP(2), CandPar(mxCP, 2)
 logical, intent(IN) :: ParOnly
-integer :: m, u, v, best(2), par, AG(2), kA, curpar(2), x, uv(2), mate_v,mate_u, &
+integer :: m, u, v, best(2), par, AG(2), kA, curpar(2), uv(2), mate_v,mate_u, &
    i,j, n, fcl, nSingle, ToDoSingleCheck(MAXVAL(nCP),2)
 double precision :: LRS, LLRX(nCP(1),nCP(2)), LLRY(nCP(1),nCP(2)), ALR, & 
   LLRZpair(nCP(1),nCP(2),2), LLRZsingle(2,MAXVAL(nCP),2), gLL(4,2), TAx(2), dLLrev(2), &
@@ -5735,7 +5736,7 @@ implicit none
 integer, intent(IN) :: A,B, k
 logical, intent(IN) :: withFS(2)  ! A, B                  
 double precision, intent(OUT) :: LL
-integer :: l, x, y, z, PAB, Ai, Bj, i, j, exclFS(2), h, parA(2), parB(2), GA(2)
+integer :: l, x, y, z, PAB, Ai, Bj, exclFS(2), h, parA(2), parB(2), GA(2)
 double precision :: PrL(nSnp,2), PrXYZ(3,3,3,3), PrY(3), PrZ(3), PrX(3), &
   PrTmp, PrW(3), LLtmp(2), PrA(3,3), PrB(3,3)
 logical :: ParOK                
@@ -18825,8 +18826,7 @@ implicit none
 
 double precision, intent(IN) :: AP_IN(MaxMaxAgePO+1,5)
 integer, intent(INOUT) :: BYrange(nInd, 2)
-integer :: i,j, BYLast, r, x, y, rik, rkj
-double precision :: scl
+integer :: i, BYLast, x, y
 
 !===  determine first & last possible birth year  ==============   
 BYzero = MINVAL(BY, MASK=BY>=0) -1   ! defaults to HUGE(ARRAY) 
