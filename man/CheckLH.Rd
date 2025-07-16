@@ -19,8 +19,7 @@ individual in gID was not in the input-LH.}
 
 \item{returnDups}{logical, instead of just the (sorted) LifeHistData, return
 a list that also includes a dataframe with duplicate entries and/or a
-character vector with genotyped IDs not occuring in LifeHistData (as
-formerly returned by \code{DuplicateCheck}).}
+character vector with genotyped IDs not occuring in LifeHistData.}
 }
 \value{
 A dataframe with LifeHistData formatted for use by the Fortran

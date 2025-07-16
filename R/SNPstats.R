@@ -20,8 +20,10 @@
 #'   Additional columns and non-genotyped individuals are ignored. Used to count
 #'   Mendelian errors per SNP and (poorly) estimate the error rate.
 #' @param Duplicates  dataframe with pairs of duplicated samples
-#' @param Plot  show histograms of the results?
-#' @param quiet  suppress messages
+#' @param Plot  logical, show histograms of the results?
+#' @param quiet  logical, suppress messages?
+#' @param calc_HWE logical, calculate chi-square test for Hardy-Weinberg
+#'   equilibrium? Can be relatively time consuming for large datasets.
 #' @param ErrFlavour DEPRECATED AND IGNORED. Was used to estimate \code{Err.hat}
 #'
 #' @return A matrix with a number of rows equal to the number of SNPs
@@ -61,30 +63,37 @@ SnpStats <- function(GenoM,
                      Duplicates = NULL,
                      Plot = TRUE,
                      quiet = TRUE,
+                     calc_HWE = TRUE,
                      ErrFlavour)
 {
+  if (!inherits(GenoM, 'matrix'))  stop("GenoM must be a matrix")
   GenoM[is.na(GenoM)] <- -9
   # missingness
   Mis <- apply(GenoM, 2, function(x) sum(x < 0))/nrow(GenoM)
   # allele frequency
   AF <- apply(GenoM, 2, function(x) sum(x[x>=0])/(2*sum(x>=0)))
-  # Hardy-weinberg equilibrium
-  counts.o <- apply(GenoM, 2, function(x) table(factor(x, levels=c(0,1,2))))  # observed genotype counts
-  freq.e <- rbind('0' = (1-AF)^2,
-                  '1' = 2*AF*(1-AF),
-                  '2' = AF^2)
-  freq.e[, Mis==1] <- 0.0
-  calc.HWE.p <- function(i) {
-    if (all(counts.o[,i]==0)) {
-      NA  # all missing
-    } else {
-      suppressWarnings(stats::chisq.test(x = counts.o[,i],
-                                  p = freq.e[,i])$p.value)
-    }
-  }
-  HWE.p <- sapply(1:ncol(GenoM), calc.HWE.p)
+  OUT <- cbind(AF, Mis)
 
-  OUT <- cbind(AF, Mis, HWE.p)
+  # Hardy-weinberg equilibrium
+  if (!calc_HWE %in% c(TRUE, FALSE))  stop('calc_HWE must be TRUE or FALSE')
+  if (calc_HWE) {
+    counts.o <- apply(GenoM, 2, function(x) table(factor(x, levels=c(0,1,2))))  # observed genotype counts
+    freq.e <- rbind('0' = (1-AF)^2,
+                    '1' = 2*AF*(1-AF),
+                    '2' = AF^2)
+    freq.e[, Mis==1] <- 0.0
+    calc.HWE.p <- function(i) {
+      if (all(counts.o[,i]==0)) {
+        NA  # all missing
+      } else {
+        suppressWarnings(stats::chisq.test(x = counts.o[,i],
+                                    p = freq.e[,i])$p.value)
+      }
+    }
+    HWE.p <- sapply(1:ncol(GenoM), calc.HWE.p)
+
+    OUT <- cbind(OUT, HWE.p)
+  }
 
   if (is.logical(Pedigree)) {
     Plot <- Pedigree
@@ -121,9 +130,8 @@ SnpStats <- function(GenoM,
   }
 
   if (is.null(colnames(GenoM)) | all(colnames(GenoM) == paste0('V', seq_len(ncol(GenoM))))) {
-    rownames(OUT) <- paste0("SNP", formatC(1:nrow(OUT),
-                                         width=ifelse(nrow(OUT)<1000, 3, 4),
-                                         flag="0"))
+    w <- nchar(ncol(GenoM))
+    rownames(OUT) <- paste0("SNP", formatC(1:nrow(OUT), width=w, flag="0"))
   } else {
     rownames(OUT) <- colnames(GenoM)  # SNP names
   }
@@ -235,7 +243,7 @@ PlotSnpStats <- function(OUT)
 {
 
   oldpar <- par(no.readonly = TRUE)
-  oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig")]
+  oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig",'plt')]
   par(mfrow=c(3,3), mai=c(.9,.8,.2,.1), xpd=NA)
   graphics::plot.new()
 

@@ -21,7 +21,7 @@
 PlotPedComp <- function(Counts, sameSize=FALSE) {
 
   oldpar <- par(no.readonly = TRUE)
-  oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig")]
+  oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig",'plt')]
   par(mfcol=c(1,2), mai=c(.5, .7, .7, .3), omi=c(0,0,0,0))
 
   COL <- c(Match="#00B000", Mismatch="#E9002D", Ped1="#009ADE", Ped2="#FFAA00")

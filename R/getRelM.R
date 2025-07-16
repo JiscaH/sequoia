@@ -29,8 +29,8 @@
 #'   only format suitable for pedigrees with many thousands of individuals. If
 #'   \code{Pairs} is specified, the only possible return type is 'Matrix'.
 #' @param Pairs_suffix  symbol added to the relationship abbreviations derived
-#'   from \code{Pairs}, when both \code{Pedigree} and \code{Pairs} are
-#'   provided. Can be an empty string.
+#'   from \code{Pairs}, when both \code{Pedigree} and \code{Pairs} are provided.
+#'   Can be an empty string.
 #'
 #' @return  If \code{Return='Matrix'}, an N x N square matrix, with N equal to
 #'   the number of rows in \code{Pedigree} (after running
@@ -64,6 +64,8 @@
 #'    \item{DFC1}{Double full first cousin}
 #'    \item{FC1}{Full first cousin}
 #'    \item{U}{Unrelated (or otherwise related)}
+#'    \item{X}{Unknown, e.g. when only \code{Pairs} is provided and does not
+#'      include this pair}
 #'
 #' @details  Double relationships are ignored when \code{Return='Matrix'}, but
 #'   not when \code{Return='Array'}. For example, when A and B are both
@@ -104,7 +106,7 @@ GetRelM <- function(Pedigree = NULL,
   if (!(Return %in% c("Matrix", "Array", "List")))  stop("Return must be 'Matrix', 'Array', or 'List'")
   if (!is.null(Pairs)) {
     if (Return != "Matrix")  stop("When providing Pairs, Return must be 'Matrix'")
-    if (!class(Pairs) %in% c("data.frame", "matrix"))  stop("Pairs should be a dataframe or matrix")
+    if (!inherits(Pairs, c("data.frame", "matrix")))  stop("Pairs should be a dataframe or matrix")
   }
   if (!directed & patmat)  stop('directed=FALSE not compatible with patmat=TRUE')
 
@@ -131,7 +133,9 @@ GetRelM <- function(Pedigree = NULL,
     names(Pairs)[1:3] <- c("ID1", "ID2", "Rel")
     for (x in 1:3)  Pairs[,x] <- as.character(Pairs[,x])
 
-    RelM.tmp <- plyr::daply(Pairs, .variables=c("ID1", "ID2"), .fun=function(df) df$Rel)
+    RelM.tmp <- plyr::daply(Pairs, .variables=c("ID1", "ID2"), .fun=function(df) df$Rel,
+                            .drop_o = FALSE)  # do NOT drop dimension if ID1 or ID2 is of length 1
+    RelM.tmp <- A2M(RelM.tmp)  # function in Utils.R, drop 3rd dim
     # make into symmetrical matrix to get consistency in above/below diagonal:
     IDs <- unique(c(as.character(Pairs$ID1), as.character(Pairs$ID2)))
     RelM.a <- inflate(RelM.tmp, IDs)
@@ -139,8 +143,8 @@ GetRelM <- function(Pedigree = NULL,
     if(any(RelM.a != RelM.b, na.rm=TRUE)) {
       stop("One or more pairs occur 2x in 'Pairs', with different relationship")
     }
-    RelM.pairs <- RelM.a
-    RelM.pairs[,] <- "U"
+    RelM.pairs <- RelM.a  # same dimensions
+    RelM.pairs[,] <- "X"  # changed 2025-03-19, was 'U'
     diag(RelM.pairs) <- "S"
     RelM.pairs[!is.na(RelM.a)] <- RelM.a[!is.na(RelM.a)]
     RelM.pairs[!is.na(RelM.b)] <- RelM.b[!is.na(RelM.b)]

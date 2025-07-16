@@ -290,7 +290,7 @@ PlotRelPairs <- function(RelM = NULL,
   }
 
   oldpar <- par(no.readonly = TRUE)
-  oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig")]   # current plot dimensions, not setable. bug?
+  oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig",'plt')]   # current plot dimensions, not setable. bug?
   par(mfcol=c(1,1), mar=mar)
 
   OK <- tryPlot(plot,

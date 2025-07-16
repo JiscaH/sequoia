@@ -56,7 +56,8 @@ returned.}
 }
 \description{
 Ensure all parents & all genotyped individuals are included,
-  remove duplicates, rename columns, and replace 0 by NA or v.v..
+  remove duplicates, rename columns, and replace 0 by NA or v.v.. Does not
+  sort parents before offspring.
 }
 \details{
 Recognized column names are an exact or partial match with (case is
@@ -69,6 +70,10 @@ ignored):
 swapped by this function if necessary.
 }
 \examples{
+PedZ <- Ped_HSg5[41:50, ]
+PedPolish(PedZ)
+PedPolish(PedZ, gID = rownames(SimGeno_example)[30:40], DropNonSNPd=TRUE)
+
 \dontrun{
 # To get the output pedigree into kinship2 compatible format:
 PedP <- sequoia::PedPolish(SeqOUT$Pedigree, DropNonSNPd=FALSE,

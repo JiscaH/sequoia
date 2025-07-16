@@ -55,7 +55,7 @@ PlotPairLL <- function(PairLL,
                        Tfilter = -2.0)
 {
   oldpar <- par(no.readonly = TRUE)
-  oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig")]
+  oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig",'plt')]
 
   RelNames <- c("Parent-Offspring"="PO",
                 "Full Sib" = "FS",

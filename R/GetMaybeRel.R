@@ -28,9 +28,6 @@
 #'   be otherwise related.
 #' @param MaxPairs  the maximum number of putative pairs to return.
 #' @param quiet logical, suppress messages.
-#' @param ParSib \strong{DEPRECATED, use \code{Module}} either 'par' to check
-#'   for putative parent-offspring pairs only, or 'sib' to check for all types
-#'   of first and second degree relatives.
 #' @inheritParams sequoia
 #'
 #' @return A list with
@@ -148,25 +145,14 @@ GetMaybeRel <- function(GenoM = NULL,
                         Tassign = 0.5,
                         Tfilter = -2.0,
                         MaxPairs =  7*nrow(GenoM),
-                        quiet = FALSE,
-                        ParSib = NULL,  # DEPRECATED
-                        MaxMismatch = NA)   # DEPRECATED
+                        quiet = FALSE)
 {
   on.exit(.Fortran(deallocall), add=TRUE)
 
-  # backwards compatibility, until ParSib deprecated:
-  if (!is.null(ParSib)) {
-    if (ParSib %in% c("par", "sib", "ped")) {
-      Module <- switch(ParSib, par = "par", sib = "ped", ped="ped")
-    } else {
-      stop("'ParSib' must be 'par' or 'sib'; or use only 'Module' instead")
-    }
-  }
   if (!Module %in% c("par", "ped"))  stop("'Module' must be 'par' or 'ped'")
   if(!quiet)  cli::cli_alert_info(paste0("Searching for non-assigned ",
                       c(par="parent-offspring", ped="relative")[Module], " pairs ...",
                       " (Module = ", Module, ")"))
-
 
   # unpack SeqList ----
   if (!is.null(SeqList)) {

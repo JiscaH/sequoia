@@ -46,8 +46,7 @@
 #'   `Specs', and `ErrM', and these override the corresponding input parameters.
 #'   Not all of these elements need to be present, and all other elements are
 #'   ignored. If \code{SeqList$Specs} is provided, all  input parameters with
-#'   the same name as its items are ignored, except
-#'   \code{Module}/\code{MaxSibIter}.
+#'   the same name as its items are ignored, except \code{Module}.
 #' @param Module one of
 #'   \describe{
 #'     \item{pre}{Only input check, return \code{SeqList$Specs}}
@@ -58,9 +57,6 @@
 #'       sibship clustering and grandparent assignment. By far the most time
 #'       consuming, and may take several hours for large datasets.}
 #'   }
-#'   NOTE: \emph{Until `MaxSibIter` is fully deprecated: if `MaxSibIter` differs
-#'   from the default (\code{42}), and `Module` equals the default
-#'   (\code{'ped'}), MaxSibIter overrides `Module`.}
 #' @param Err estimated genotyping error rate, as a single number, or a length 3
 #'   vector with P(hom|hom), P(het|hom), P(hom|het), or a 3x3 matrix. See
 #'   details below. The error rate is presumed constant across SNPs, and
@@ -119,15 +115,6 @@
 #'   the unavoidable default up to version 2.4.1. Otherwise only excluded are
 #'   (very nearly) monomorphic SNPs, SNPs scored for fewer than 2 individuals,
 #'   and individuals scored for fewer than 2 SNPs.
-#' @param MaxSibIter \strong{DEPRECATED, use \code{Module}} number of iterations
-#'   of sibship clustering, including assignment of grandparents to sibships and
-#'   avuncular relationships between sibships. Clustering continues until
-#'   convergence or until MaxSibIter is reached. Set to 0 for parentage
-#'   assignment only.
-#' @param MaxMismatch \strong{DEPRECATED AND IGNORED}. Now calculated
-#'   automatically using \code{\link{CalcMaxMismatch}}.
-#' @param FindMaybeRel \strong{DEPRECATED AND IGNORED}, advised to run
-#'   \code{\link{GetMaybeRel}} separately.
 #'
 #'
 #' @return A list with some or all of the following components, depending on
@@ -243,9 +230,14 @@
 #'    data
 #'  }
 #'  All pairs of non-assigned but likely/definitely relatives can be found with
-#'  \code{\link{GetMaybeRel}}. For a method to do pairwise 'assignments', see
+#'  \code{\link{GetMaybeRel}} (run without conditioning on a pedigree). For a
+#'  method to do pairwise 'assignments', see
 #'  https://jiscah.github.io/articles/pairLL_classification.html ; for further
 #'  information, see the vignette.
+#'
+#'  If you already had a partial pedigree, running \code{\link{CalcOHLLR}} or
+#'  \code{\link{CalcParentProbs}} on it with the new SNP data and various
+#'  parameter value combinations may be informative.
 #'
 #' @section Disclaimer:
 #' While every effort has been made to ensure that sequoia provides what it
@@ -274,6 +266,8 @@
 #'   \item \code{\link{GetRelM}} to turn a pedigree into pairwise relationships,
 #'   \item \code{\link{CalcOHLLR}} to calculate Mendelian errors and LLR for any
 #'    pedigree,
+#'   \item \code{\link{CalcParentProbs}} to calculate assignment probabilities
+#'   instead of LLRs,
 #'   \item \code{\link{CalcPairLL}} for likelihoods of various relationships
 #'    between specific pairs,
 #'   \item \code{\link{CalcBYprobs}} to estimate birth years,
@@ -364,14 +358,11 @@ sequoia <- function(GenoM = NULL,
                     UseAge = "yes",
                     args.AP = list(Flatten=NULL, Smooth=TRUE),
                     mtSame = NULL,
-                    CalcLLR = TRUE,
+                    CalcLLR = FALSE,
                     quiet = FALSE,
                     Plot = NULL,
                     StrictGenoCheck = TRUE,
-                    ErrFlavour = "version2.9",
-                    MaxSibIter = 42,  # DEPRECATED
-                    MaxMismatch = NA,  # DEPRECATED
-                    FindMaybeRel = FALSE)  # DEPRECATED
+                    ErrFlavour = "version2.9")
 {
 
   TimeStart <- Sys.time()
@@ -383,25 +374,10 @@ sequoia <- function(GenoM = NULL,
   if (is.null(Plot))   # default
     Plot <- ifelse(quietR, FALSE, TRUE)
 
-  # Backwards compatibility: Module vs MaxSibIter ----
-  # if MaxSibIter is not default (42), and Module is default (ped), MaxSibIter overrides Module
-  if (MaxSibIter != 42 && Module == "ped") {
-    Module <- cut(MaxSibIter,
-                  breaks= c(-Inf, -9, -1, 0, Inf),
-                  labels = c("pre", "dup", "par", "ped"))
-    if (!quietR)  cli::cli_alert_warning(c("`MaxSibIter` will be deprecated, ",
-      "please use `Module` instead"))
-  } else {
-    Module <- factor(Module, levels = c("pre", "dup", "par", "ped"))
-    if (is.na(Module))  stop("'Module'  must be 'pre', 'dup', 'par', or 'ped'")
-  }
-
-  if (FindMaybeRel)
-    cli::cli_alert_warning(c("`FindMaybeRel` has been deprecated and is ignored,",
-            "instead run `GetMaybeRel()` afterwards"))
-  if (!is.na(MaxMismatch))
-    cli::cli_alert_warning(c("`MaxMismatch` has been deprecated and is ignored,",
-            "now calculated automatically via `CalcMaxMismatch()`"))
+  # Module ----
+  # MaxSibIter is now fully deprecated.
+  Module <- factor(Module, levels = c("pre", "dup", "par", "ped"))
+  if (is.na(Module))  stop("'Module'  must be 'pre', 'dup', 'par', or 'ped'")
 
   if (!is.null(LifeHistData) & !inherits(LifeHistData, 'data.frame'))
     stop("`LifeHistData` must be a data.frame or NULL")
@@ -409,8 +385,7 @@ sequoia <- function(GenoM = NULL,
     stop("`SeqList` must be a list or `NULL`")
 
   if (!is.null(SeqList)) {
-    SeqList_names <- c("Specs", "ErrM", "args.AP", "AgePriors", "LifeHist",
-                       "PedigreePar", "MaxSibIter")
+    SeqList_names <- c("Specs", "ErrM", "args.AP", "AgePriors", "LifeHist","PedigreePar")
     if (!any(names(SeqList) %in% SeqList_names) | any(is.na(names(SeqList))) ) {
       cli::cli_alert_danger("You seem to have misspelled one or more names of elements of `SeqList`:")
       cli::cli_li(setdiff(names(SeqList), SeqList_names))
@@ -481,16 +456,6 @@ sequoia <- function(GenoM = NULL,
                                          args.AP))
   }
 
-
-  # Check Pedigree ----
-  if ("PedigreePar" %in% names(SeqList) & Module != "dup") {
-    if (!quietR)  cli::cli_alert_info("using `PedigreePar` in `SeqList`")
-    PedParents <- PedPolish(SeqList[["PedigreePar"]], gID = rownames(GenoM),
-                            ZeroToNA = TRUE, DropNonSNPd = TRUE)
-  } else {
-    PedParents <- NULL
-  }
-
   utils::flush.console()
 
   # check & reformat mitochondrial same/not matrix
@@ -500,7 +465,6 @@ sequoia <- function(GenoM = NULL,
   if ("Specs" %in% names(SeqList)) {
     PARAM <- SpecsToParam(SeqList$Specs, SeqList$ErrM, ErrFlavour,  # re-wrapping + ErrToM check
                           dimGeno = dim(GenoM), Module, quiet) # overrule old values
-    if (Module=="ped")  PARAM$MaxSibIter <- 42
   } else {
     if (is.logical(UseAge))   UseAge <- ifelse(UseAge, "yes", "no")
     if ((Herm != "no" | any(LifeHistData$Sex==4, na.rm=TRUE)) & length(DummyPrefix)==2)
@@ -514,7 +478,6 @@ sequoia <- function(GenoM = NULL,
                        nAgeClasses = nrow(AgePriors),
                        MaxSibshipSize,
                        Module = as.character(Module),
-                       MaxSibIter,
                        DummyPrefix,
                        Complex,
                        Herm,
@@ -555,21 +518,34 @@ sequoia <- function(GenoM = NULL,
 
 
   # @@ 2 @@ Duplicate check ----
-  if (Module != "pre") {
+  if (Module != "pre" & !'DupGenotype' %in% names(SeqList)) {
     if(!quietR)  message(cli::col_green("\n~~~ Duplicate check ~~~"))
     DupList <- DuplicateCheck(GenoM, FortPARAM, quiet=quietR)
     utils::flush.console()
-    if ("DupGenoID" %in% names(DupList)) {  # fatal error  (message by duplicateCheck())
+    if ("DupGenoID" %in% names(DupList)) {  # fatal error  (message by DuplicateCheck())
       return(DupList)
     } else if (length(DupList)==0 & !quietR) {
       cli::cli_alert_success("No potential duplicates found")
+    } else if ('DupGenotype' %in% names(DupList) && nrow(DupList[['DupGenotype']])>=nrow(GenoM)) {
+      cli::cli_alert_danger(paste('The high number of putative duplicate genotypes suggests',
+                                  'that the genotype data is not informative enough for',
+                                  'parentage assignment.'), wrap=TRUE)
+      stop()
     }
   } else DupList <- NULL
   utils::flush.console()
 
 
-  # @@ 3 @@ Parentage assignment ----
-  if (Module == "par"  | (Module  == "ped" & is.null(PedParents))) {
+  # @@ 3 @@ Parentage assignment ---- 
+  if (Module != "dup" & "PedigreePar" %in% names(SeqList)) {
+    if (!quietR)  cli::cli_alert_info("using `PedigreePar` in `SeqList`")
+    PedParents <- PedPolish(SeqList[["PedigreePar"]], gID = rownames(GenoM),
+                            ZeroToNA = TRUE, DropNonSNPd = TRUE)
+  } else {
+    PedParents <- NULL
+  }
+  
+  if (Module == "par"  | (Module  == "ped" & !"PedigreePar" %in% names(SeqList))) {
     if(!quietR & Module == "par" & !is.null(PedParents)) {
       message(cli::col_green("\n~~~ Parentage assignment with pedigree-prior ~~~"))  # only sensible with Herm=A or B (?)
     } else if(!quietR) {
@@ -641,9 +617,12 @@ sequoia <- function(GenoM = NULL,
   # Output ----
 
   if (quiet=='verbose' & Module %in% c('par', 'ped')) {
-    cli::cli_alert_info("You can use `SummarySeq()` for pedigree details, and `EstConf()` for confidence estimates")
-    cli::cli_alert_info(paste('Possibly not all', c(par = 'parents', ped = 'relatives')[as.character(Module)],
-    'were assigned, consider running `GetMaybeRel()` conditional on this pedigree to check'), wrap=TRUE)
+    cli::cli_alert_info(paste("You can use `SummarySeq()` for pedigree details, ",
+                        "`CalcParentProbs()` for assignment probabilities, ",
+                        "and `EstConf()` for confidence estimates"), wrap=TRUE)
+    cli::cli_alert_info(paste('Run `GetMaybeRel()` conditional on this pedigree to check for any ',
+                              'non-assigned ', c(par = 'parents', ped = 'relatives')[as.character(Module)]),
+                              wrap=TRUE)
   }
 
   OUT <- list()

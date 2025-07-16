@@ -23,12 +23,17 @@ A matrix with \code{nrow} equal to the length of \code{agedif}, and 7
 Get log10-likelihood ratios for a specific age difference from
   matrix \code{AgePriorExtra}.
 }
+\details{
+This is a simple helper function to extract values from
+ \code{AgePriorExtra}, e.g. to use together with \code{\link{CalcPairLL}}.
+}
 \examples{
-PairsG <- data.frame(ID1="i122_2007_M",
-                     ID2 = c("i124_2007_M", "i042_2003_F", "i083_2005_M"),
-                     AgeDif = c(0,4,2))
+# For a pair with unknown age difference, explore the difference age-based
+# LLRs for all relationships, for a range of plausible age differences.
+PairsG <- data.frame(ID1 = 'A', ID2 = 'B', AgeDif = rep(c(-2,2,3),2),
+                   PatMat = rep(1:2, each=3))
 cbind(PairsG,
       GetLLRAge(SeqOUT_griffin$AgePriorExtra,
-                agedif = PairsG$AgeDif, patmat=rep(2,3)))
+                agedif = PairsG$AgeDif, patmat = PairsG$PatMat))
 
 }

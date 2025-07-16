@@ -10,6 +10,7 @@ SnpStats(
   Duplicates = NULL,
   Plot = TRUE,
   quiet = TRUE,
+  calc_HWE = TRUE,
   ErrFlavour
 )
 }
@@ -24,9 +25,12 @@ Mendelian errors per SNP and (poorly) estimate the error rate.}
 
 \item{Duplicates}{dataframe with pairs of duplicated samples}
 
-\item{Plot}{show histograms of the results?}
+\item{Plot}{logical, show histograms of the results?}
 
-\item{quiet}{suppress messages}
+\item{quiet}{logical, suppress messages?}
+
+\item{calc_HWE}{logical, calculate chi-square test for Hardy-Weinberg
+equilibrium? Can be relatively time consuming for large datasets.}
 
 \item{ErrFlavour}{DEPRECATED AND IGNORED. Was used to estimate \code{Err.hat}}
 }

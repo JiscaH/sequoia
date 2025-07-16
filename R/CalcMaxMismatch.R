@@ -29,6 +29,9 @@
 #'   individual-level probability. For a desired dataset-level probability
 #'   quantile \eqn{Q}, use \code{qntl}\eqn{= Q^{(1/N)}}, where \eqn{N} is
 #'   the number of individuals.
+#' @param Return Either 'Counts' to return the threshold counts (default),
+#'  or 'Probs' to return the mismatch probabilities from which these counts
+#'  are calculated.
 #'
 #' @return A vector with three integers:
 #'  \item{DUP}{Maximum number of differences between 2 samples from the
@@ -50,7 +53,8 @@
 #'
 #' @export
 
-CalcMaxMismatch <- function(Err, MAF, ErrFlavour = "version2.9", qntl=1-1e-5) {
+CalcMaxMismatch <- function(Err, MAF, ErrFlavour = "version2.9", qntl=1-1e-5,
+                            Return='Counts') {
 
   nSnp <- length(MAF)
   # ErrM: observed (columns) conditional on actual (rows)
@@ -128,12 +132,16 @@ CalcMaxMismatch <- function(Err, MAF, ErrFlavour = "version2.9", qntl=1-1e-5) {
   max.digits <- floor(abs(log10(.Machine$double.ep)))
   P.Mismatch <- round(P.Mismatch, digits = max.digits)
 
-  MaxMismatchV <- setNames(numeric(3), c("DUP", "OH", "ME"))
-  for (x in 1:3) {
-    MaxMismatchV[x] <- stats::qbinom(qntl, size = nSnp, prob = mean(P.Mismatch[x, ]))
-  }
+  if (Return == 'Counts') {
+    MaxMismatchV <- setNames(numeric(3), c("DUP", "OH", "ME"))
+    for (x in 1:3) {
+      MaxMismatchV[x] <- stats::qbinom(qntl, size = nSnp, prob = mean(P.Mismatch[x, ]))
+    }
 
-  return( MaxMismatchV )
+    return( MaxMismatchV )
+  } else {
+    return(setNames(P.Mismatch, c("DUP", "OH", "ME")))
+  }
 }
 
 #===============================================================================

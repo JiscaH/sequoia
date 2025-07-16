@@ -129,6 +129,9 @@
 #'   \code{PlotAgePrior}, and adjust the input parameters and/or the output
 #'   matrix as necessary.
 #'
+#'   A few outlier birth years can heavily influence the output; these may be
+#'   easiest to spot with \code{Smooth=FALSE, Flatten=FALSE}.
+#'
 #' @section Single cohort:
 #'   When all individuals in \code{LifeHistData} have the same birth year, it is
 #'   assumed that \code{Discrete=TRUE} and \code{MaxAgeParent=1}. Consequently,
@@ -372,8 +375,9 @@ MakeAgePrior <- function(Pedigree = NULL,
   tblA.R <- tblA.R[, RR]
 
   # Reference: age difference distribution across all pairs of individuals
-  tbl.AgeDifs <- CountAgeDif(Ped.LH$BirthYear, BYrange)  # quicker than table(outer()), function below
-  tblA.R <- cbind(tblA.R, "X" = tbl.AgeDifs[0:MaxT+1])  # irrespective of Relationship
+  AgeDifM[diag(AgeDifM)] <- NA  # self
+  tblA.R <- cbind(tblA.R,
+                  "X" = table(factor(AgeDifM, levels=0:MaxT)))
   tblA.R[is.na(tblA.R)] <- 0
 
   if (any(tblA.R["0", c("M", "P")] > 0))  stop("Some parent-offspring pairs have age difference 0")
@@ -450,7 +454,7 @@ MakeAgePrior <- function(Pedigree = NULL,
     } else if (!Flatten) {
       if (any(NAK.R[c("M","P", "MS", "PS")] < 5)) {
         Flatten <- TRUE   # overrule user-specified
-        cli::cli_alert_info(c("Fewer than 5 mother-offspring and/or father-offspring pairs with ",
+        cli::cli_alert_info(c("Fewer than 5 mother-offspring, father-offspring, or sibling pairs with ",
           "known age difference, changing to `Flatten=TRUE`"))
       } else {
         cli::cli_alert_warning(c("Fewer than {MinPairs.AgeKnown} mother-offspring and/or ",
@@ -657,37 +661,6 @@ SmoothAP <- function(V, tiny=0.001) {
 }
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#' @title Tabulate Age Differences
-#'
-#' @description Count no. pairs per age difference from birth years. Quicker
-#'   than \code{table(outer())}.
-#'
-#' @param BirthYear  numeric vector with birth years.
-#' @param BYrange  range to limit counts to.
-#'
-#' @keywords internal
-
-CountAgeDif <- function(BirthYear, BYrange = range(BirthYear)) {
-	BYf <- factor(BirthYear, levels=c(BYrange[1]:BYrange[2]))
-	BYM <- matrix(0, length(BYf), nlevels(BYf),
-								dimnames = list(seq_along(BirthYear), levels(BYf)))
-	BYM[cbind(seq_along(BYf), BYf)] <- 1
-	BYM[rowSums(BYM)==0, ] <- NA
-
-	AA <- outer(as.numeric(levels(BYf)), as.numeric(levels(BYf)), "-")
-	BY.cnt <- apply(BYM, 2, sum, na.rm=TRUE)
-	tmp <- outer(BY.cnt, BY.cnt, "*")
-	A.cnt <- stats::setNames(rep(0, max(AA)+1), 0:max(AA))
-	for (a in 0:max(AA)) {
-		A.cnt[a+1] <- sum(tmp[AA == a])
-	}
-	A.cnt["0"] <- A.cnt["0"] -sum(!is.na(BYM[,1]))   # self
-	return( A.cnt )
-}
-
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #' @title LLR-age from Ageprior Matrix
@@ -704,13 +677,17 @@ CountAgeDif <- function(BirthYear, BYrange = range(BirthYear)) {
 #' @return A matrix with \code{nrow} equal to the length of \code{agedif}, and 7
 #'   columns: PO-FS-HS-GP-FA-HA-U.
 #'
+#' @details  This is a simple helper function to extract values from
+#'  \code{AgePriorExtra}, e.g. to use together with \code{\link{CalcPairLL}}.
+#'
 #' @examples
-#' PairsG <- data.frame(ID1="i122_2007_M",
-#'                      ID2 = c("i124_2007_M", "i042_2003_F", "i083_2005_M"),
-#'                      AgeDif = c(0,4,2))
+#' # For a pair with unknown age difference, explore the difference age-based
+#' # LLRs for all relationships, for a range of plausible age differences.
+#' PairsG <- data.frame(ID1 = 'A', ID2 = 'B', AgeDif = rep(c(-2,2,3),2),
+#'                    PatMat = rep(1:2, each=3))
 #' cbind(PairsG,
 #'       GetLLRAge(SeqOUT_griffin$AgePriorExtra,
-#'                 agedif = PairsG$AgeDif, patmat=rep(2,3)))
+#'                 agedif = PairsG$AgeDif, patmat = PairsG$PatMat))
 #'
 #' @export
 

@@ -76,7 +76,7 @@ PlotAgePrior <- function(AP = NULL, legend=TRUE)
 	}
 
 	oldpar <- par(no.readonly = TRUE)
-	oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig")]   # current plot dimensions, not setable. bug?
+	oldpar <- oldpar[!names(oldpar) %in% c("pin","fig",'plt')]   # current plot dimensions, not setable. bug?
 
 	if (legend) {
 	  ly <- tryCatch( layout(matrix(c(1,2), nrow=1), widths=c(.8, .2)) ,

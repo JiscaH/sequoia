@@ -47,8 +47,8 @@ only format suitable for pedigrees with many thousands of individuals. If
 \code{Pairs} is specified, the only possible return type is 'Matrix'.}
 
 \item{Pairs_suffix}{symbol added to the relationship abbreviations derived
-from \code{Pairs}, when both \code{Pedigree} and \code{Pairs} are
-provided. Can be an empty string.}
+from \code{Pairs}, when both \code{Pedigree} and \code{Pairs} are provided.
+Can be an empty string.}
 }
 \value{
 If \code{Return='Matrix'}, an N x N square matrix, with N equal to
@@ -83,6 +83,8 @@ If \code{Return='Matrix'}, an N x N square matrix, with N equal to
    \item{DFC1}{Double full first cousin}
    \item{FC1}{Full first cousin}
    \item{U}{Unrelated (or otherwise related)}
+   \item{X}{Unknown, e.g. when only \code{Pairs} is provided and does not
+     include this pair}
 }
 \description{
 Generate a matrix or 3D array with all pairwise relationships

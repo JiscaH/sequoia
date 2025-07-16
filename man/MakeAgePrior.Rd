@@ -149,6 +149,9 @@ Estimate probability ratios \eqn{P(R|A) / P(R)} for age
   datasets is impossible. Please do inspect the matrix, e.g. with
   \code{PlotAgePrior}, and adjust the input parameters and/or the output
   matrix as necessary.
+
+  A few outlier birth years can heavily influence the output; these may be
+  easiest to spot with \code{Smooth=FALSE, Flatten=FALSE}.
 }
 
 \section{Single cohort}{

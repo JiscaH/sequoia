@@ -12,7 +12,6 @@ writeSeq(
   OutFormat = "txt",
   folder = "Sequoia-OUT",
   file = "Sequoia-OUT.xlsx",
-  ForVersion = 2,
   quiet = FALSE
 )
 }
@@ -37,9 +36,6 @@ directory, or NULL for current working directory. Ignored if
 
 \item{file}{the name of the excel file to write to, ignored if
 \code{OutFormat='txt'}.}
-
-\item{ForVersion}{choose '1' for back-compatibility with stand-alone sequoia
-versions 1.x}
 
 \item{quiet}{suppress messages.}
 }

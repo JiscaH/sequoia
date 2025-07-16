@@ -57,11 +57,11 @@ SeqParSib <- function(ParSib,
   SpecsIntMkPed <- c(switch(ParSib,
                             par = 1,
                             sib = 2),
-                     FortPARAM$SpecsIntMkPed)
+                     FortPARAM$SpecsIntMkPed)  # UseAge 0/1/2; CalcLLR T/F
 
   TMP <- .Fortran(makeped,
                   # IN:
-                  ng = as.integer(Ng),
+                  ng = as.integer(Ng),   # no. genotyped individuals
                   specsintglb = as.integer(FortPARAM$SpecsInt),
                   specsintmkped = as.integer(SpecsIntMkPed),
                   specsdbl = as.double(FortPARAM$SpecsDbl),
@@ -164,7 +164,7 @@ SeqParSib <- function(ParSib,
   #=========================
   # returned ageprior w columns for GP + avuncular
 
-  if (grepl("par", ParSib) | grepl("sib", ParSib)) {
+  if (grepl("par", ParSib) | grepl("sib", ParSib)) {   # calculated before run
     APM <- VtoM(TMP$apout, nc=15)
     colnames(APM) <- c("M", "P", "FS", "MS", "PS",
                        "MGM", "MGF", "MFA", "MMA", "MPA",
@@ -209,7 +209,7 @@ SeqParSib <- function(ParSib,
   if (grepl("par", ParSib)) {
     OUT <- list(PedigreePar = Pedigree,
                 TotLikPar = TotLik,
-                AgePriorExtra = APM,
+  #              AgePriorExtra = APM,  confusing: calculated at start of run
                 LifeHistPar = LhOUT)
 
   } else if (grepl("sib", ParSib)) {

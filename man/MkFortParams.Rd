@@ -34,7 +34,6 @@ A list with elements
   \item{ErrM}{double, 3x3 matrix passed as length-9 vector}
   \item{SpecsIntMkPed}{\code{fun='main'} only
     \itemize{
-      \item MaxSibIter
       \item AgeEffect, 0=no, 1=yes, 2=extra
       \item CalcLLR, 0=FALSE, 1=TRUE
       \item Herm, 0=no, 1= dam/sire distinction, 2=no dam/sire distinction

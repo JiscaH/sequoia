@@ -10,6 +10,13 @@ as.DF <- function(V, colnames=c("name", "x")) {
 }
 
 #======================================================================
+# convert 3D array to matrix
+A2M <- function(A) {
+  if (dim(A)[3]!=1)  stop('function A2M only intended for arrays with dim(3)=1')
+  array(A[,,1], dim=dim(A)[1:2], dimnames=dimnames(A)[1:2])
+}
+
+#======================================================================
 # test if can be converted to integers/numbers ----
 check.integer <- function(xx) ifelse(is.na(xx), NA,
                                      grepl("^[-]{0,1}[0-9]{1,}$", xx))
@@ -117,11 +124,11 @@ namedlist <- function(...) {
 #======================================================================
 # priority of relationships (close -> distant)
 # used by GetRelM() & ComparePairs()
-RelRank <- c("S", "M", "P", "MP", "O", "PO?",
+RelRank <- c("S", "M", "P", "MP", "O", "PO", "PO?",
                "FS","FS?", "MHS", "PHS", "HS", "HS?",
                "MGM", "MGF", "PGM", "PGF", "GP", "GO","GP?",
-               "FA", "FN", "FA?", "2nd?", "HA", "HN","HA?",
-               "DFC1", "FC1", "XX?", "Q?", "U", "X")
+               "FA", "FN", "FA?", '2nd', "2nd?", "HA", "HN","HA?",
+               "DFC1", "FC1", "XX?", 'Q', "Q?", "U", "X")
 
 #======================================================================
 # simpleCap ----

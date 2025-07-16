@@ -28,10 +28,13 @@ with fully missing genotype. Ignored if CallRate is a named vector. NOTE:
 default changed from 0.4 (up to version 2.8.5) to 0 (from version 2.9).}
 
 \item{MAF}{either a single number with minimum minor allele frequency, and
-allele frequencies will be sampled uniformly between this minimum and 0.5,
-OR a vector with minor allele frequency at each locus. In both cases, this
-is the MAF among pedigree founders, the MAF in the sample will deviate due
-to drift.}
+allele frequencies will be sampled uniformly between this minimum
+('min_maf') and 1-min_maf (NOTE: between min_maf and 0.5 up to version
+2.11) OR a vector with minor allele frequency at each locus. In both cases,
+this is the MAF among pedigree founders; the MAF in the sample will deviate
+due to drift. Occasionally, alleles may get fixed, and all founders
+carrying the allele simulated as non-genotyped, resulting in a sample MAF
+of 0.}
 
 \item{CallRate}{either a single number for the mean call rate (genotyping
 success), OR a vector with the call rate at each SNP, OR a named vector

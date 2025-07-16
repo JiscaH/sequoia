@@ -22,8 +22,6 @@
 #'   \code{OutFormat='xls'}.
 #' @param file the name of the excel file to write to, ignored if
 #'   \code{OutFormat='txt'}.
-#' @param ForVersion choose '1' for back-compatibility with stand-alone sequoia
-#'   versions 1.x
 #' @param quiet suppress messages.
 #'
 #' @seealso \code{\link{writeColumns}} to write to a text file, using white
@@ -54,7 +52,6 @@ writeSeq <- function(SeqList,
                      OutFormat = "txt",
                      folder = "Sequoia-OUT",
                      file = "Sequoia-OUT.xlsx",
-                     ForVersion = 2,
                      quiet = FALSE) {
 
   if (!OutFormat %in% c("xls", "xlsx", "txt"))  stop("Invalid OutFormat")
@@ -146,12 +143,6 @@ writeSeq <- function(SeqList,
     if (!x %in% names(SpecsOUT))  next   # if SeqList from version 1.x
     SpecsOUT[[x]] <- as.character(SpecsOUT[[x]])
   }
-  if (ForVersion == 1) {
-    SpecsOUT <- SpecsOUT[!names(SpecsOUT) %in% c("MaxMismatchOH", "MaxMismatchME")]
-    if (SpecsOUT$MaxSibIter <= 0)  SpecsOUT$MaxSibIter <- 10
-  } else {
-    SpecsOUT$MaxSibIter <- 42
-  }
   SpecsOUT <- SpecsOUT[!names(SpecsOUT) %in% "Module"]  # run-time option for stand-alone sequoia.
 
 
@@ -227,7 +218,7 @@ writeSeq <- function(SeqList,
 #==========================================================================
 write.parents <- function(ParentDF, LifeHistData, GenoM=NULL, file="Parents.txt") {
   names(ParentDF)[1:3] <- c("id", "dam", "sire")
-  names(LifeHistData) <- c("ID", "Sex", "BirthYear")
+  names(LifeHistData)[1:3] <- c("ID", "Sex", "BirthYear")
 
   if (!is.null(GenoM)) {
     gID <- rownames(GenoM)

@@ -1,40 +1,41 @@
 #' @title Assignability of Reference Pedigree
 #'
-#' @description Identify which individuals are SNP genotyped, and which can
-#'   potentially be substituted by a dummy individual ('Dummifiable').
+#' @description Identify which individuals are SNP genotyped (G), and which can
+#'   potentially be substituted by a dummy individual ('Dummyfiable', D).
 #'
-#' @details It is assumed that all individuals in \code{SNPd} have been
+#' @details  Non-genotyped individuals can potentially be substituted by a dummy
+#'   during pedigree reconstruction by \code{\link{sequoia}} when they have at least one genotyped
+#'   offspring, and either one additional offspring (genotyped or dummy) or an
+#'   genotyped/dummy parent (i.e. a grandparent to the genotyped offspring).
+#'
+#'   Note that this is the bare minimum requirement; e.g. grandparents are often
+#'   indistinguishable from full avuncular (see \code{\link{sequoia}} and
+#'   vignette for details). G-G parent-offspring pairs are only assignable if
+#'   there is age information, or information from the surrounding pedigree, to
+#'   tell which of the two is the parent.
+#'
+#'  It is assumed that all individuals in \code{SNPd} have been
 #'   genotyped for a sufficient number of SNPs. To identify samples with a
 #'   too-low call rate, use \code{\link{CheckGeno}}. To calculate the call rate
 #'   for all samples, see the examples below.
 #'
-#'   Some parents indicated here as assignable may never be assigned by sequoia,
-#'   for example parent-offspring pairs where it cannot be determined which is
-#'   the older of the two, or grandparents that are indistinguishable from full
-#'   avuncular (i.e. genetics inconclusive because the candidate has no parent
-#'   assigned, and ageprior inconclusive).
-#'
 #' @param Pedigree  dataframe with columns id-dam-sire. Reference pedigree.
 #' @param SNPd  character vector with ids of genotyped individuals.
-#' @param minSibSize  minimum requirements to be considered 'dummifiable':
+#' @param minSibSize  minimum requirements to be considered dummyfiable is 1
+#'  genotyped offspring, and
 #'   \itemize{
-#'      \item '1sib' : sibship of size 1, i.e. the non-genotyped individual has
-#'        at least 1 genotyped offspring. If there is no sibship-grandparent
-#'        this isn't really a sibship, but can be useful in some situations.
-#'        Used by \code{\link{CalcOHLLR}}.
-#'      \item '1sib1GP': sibship of size 1 with at least 1 genotyped
-#'        grandparent. The minimum to be potentially assignable by
-#'        \code{\link{sequoia}}.
-#'      \item '2sib': at least 2 siblings, with or without grandparents. Used
-#'         by \code{\link{PedCompare}}.
+#'      \item '1sib1GP': at least 1 grandparent (G or D) or 1 more offspring (G
+#'      or D); these are potentially assignable by \code{\link{sequoia}}
+#'      \item '2sib': at least 1 more offspring (i.e. 2 siblings). Old default for
+#'         \code{\link{PedCompare}}.
 #'  }.
 #'
 #' @return The \code{Pedigree} dataframe with 3 additional columns,
 #'   \code{id.cat}, \code{dam.cat} and \code{sire.cat}, with coding similar to
 #'   that used by \code{\link{PedCompare}}:
 #' \item{G}{Genotyped}
-#' \item{D}{Dummy or 'dummifiable'}
-#' \item{X}{Not genotyped and not dummifiable, or no parent in pedigree}
+#' \item{D}{Dummy or 'dummyfiable'}
+#' \item{X}{Not genotyped and not dummyfiable}
 #'
 #' @examples
 #' PedA <- getAssignCat(Ped_HSg5, rownames(SimGeno_example))
@@ -60,84 +61,58 @@ getAssignCat <- function(Pedigree, SNPd, minSibSize = "1sib1GP") {
   if (is.null(SNPd))  stop("Must provide 'SNPd'")
   Pedigree <- PedPolish(Pedigree, ZeroToNA=TRUE, NullOK = FALSE,
                         StopIfInvalid=FALSE, KeepAllRows = TRUE)
+
   if (length(intersect(Pedigree$id, SNPd)) == 0)
     stop("'Pedigree' and 'SNPd' have no IDs in common")
 
-  #~~~~~~~~~~~~~~
-  Dummifiable <- unlist(GetDummifiable(Pedigree, SNPd, minSibSize))
 
-  for (x in c("id", "dam", "sire")) {
-    Pedigree[, paste0(x, ".cat")] <- ifelse(Pedigree[,x] %in% SNPd, "G",
-                                            ifelse(Pedigree[,x] %in% Dummifiable, "D",
-                                                   "X"))
-  }
-  return( Pedigree )
-}
+  IsParent <- with(Pedigree, id %in% dam | id %in% sire)
+  IsFounder <- with(Pedigree, is.na(dam) & is.na(sire))
+  Pedigree$id.cat <- ifelse(Pedigree$id %in% SNPd, 'G',  # genotyped
+                         ifelse(IsFounder & !IsParent, 'X', # not genotyped, no parents or offspring
+                                NA))  # to be determined
 
+  # Parents with at least 1 genotyped offspring:
+  Parent_G <- with(Pedigree, list(dam = na.exclude(dam[id.cat %in% 'G']),
+                                  sire = na.exclude(sire[id.cat %in% 'G'])))
 
-
-#=============================================================================
-#=============================================================================
-#' @title Dummifiable IDs
-#'
-#' @description Get the dummifiable individuals, using various possible
-#'   criteria
-#'
-#' @param Pedigree dataframe with id - dam - sire.
-#' @param gID  vector with IDs of SNP-genotyped individuals.
-#' @param minSibSize  minimum requirements to be considered dummifiable:
-#'   \itemize{
-#'      \item '1sib' : sibship of size 1, with or without grandparents. The
-#'      latter aren't really a sibship, but can be useful in some situations.
-#'      \item '1sib1GP': sibship of size 1 with at least 1 grandparent
-#'      \item '2sib': at least 2 siblings, with or without grandparents. Used
-#'         by \code{\link{PedCompare}}
-#'  }.
-#'
-#' @return A length-2 list (dams, sires) with each element a vector with
-#'   dummifiable ids
-#'
-#' @details  values of minSibSize used by calling functions
-#'   \describe{
-#'     \item{1sib}{CalcOHLLR, CalcPairLL}
-#'     \item{1sib1GP}{getAssignCat (default when user called)}
-#'     \item{2sib}{PedCompare}
-#'   }
-#'
-#' @keywords internal
-
-GetDummifiable <- function(Pedigree, gID, minSibSize) {
-  names(Pedigree) <- c("id", "dam", "sire")
-  if (any(Pedigree == 0, na.rm=TRUE)) {
-    for (x in 1:3)  Pedigree[which(Pedigree[,x]==0), x] <- NA
-  }
-  for (x in 1:3)  Pedigree[,x] <- as.character(Pedigree[,x])
-  PedG <- Pedigree[Pedigree$id %in% gID, ]
-
-  UniqueParents <- with(PedG, list(dam = unique(na.exclude(dam[!dam %in% gID])),
-                                   sire = unique(na.exclude(sire[!sire %in% gID]))))
-
-  Dummifiable <- list(dam = c(), sire=c())
-  for (p in c("dam", "sire")) {
-    NumOff <- table(factor(PedG[,p], levels=UniqueParents[[p]]))
-    PedP <- Pedigree[match(UniqueParents[[p]], Pedigree$id), ]
-    HasGP <- !is.na(PedP$dam) | !is.na(PedP$sire)
-    HasGP.G <- PedP$dam %in% gID | PedP$sire %in% gID
-
-    if (minSibSize == "1sib") {
-      # to be replaced by fake dummies; CalcOHLLR etc.
-      # TODO: count dummifiable offspring too, i.e. make iterative.
-      Dummifiable[[p]] <- UniqueParents[[p]]  #[NumOff > 1 | HasGP]
-    } else if (minSibSize == "1sib1GP") {
-      # potentially assignable by sequoia
-      Dummifiable[[p]] <- UniqueParents[[p]][NumOff > 1 | HasGP.G]
-    } else if (minSibSize == "2sib") {
-      # matcheable by PedCompare
-      Dummifiable[[p]] <- UniqueParents[[p]][NumOff > 1]
-    } else {
-      stop("'minSibSize' must be '1sib', '2sib', or '1sib1GP'")
+  for (z in 1:10) {
+    Parent_todo <- with(Pedigree, list(dam = setdiff(na.exclude(dam), id[id.cat %in% c('G','D')]),
+                                     sire = setdiff(na.exclude(sire), id[id.cat %in% c('G','D')])))
+    # every dummy must have at least 1 genotyped offspring; remove those w only dummy offspring
+    for (p in 1:2) {
+      Parent_todo[[p]] <- intersect(Parent_todo[[p]], Parent_G[[p]])
     }
+
+    n_dummies_found <- c(0,0)
+    for (p in 1:2) {
+      # count number of genotyped+dummy offspring for each potential dummy
+      Ped_GD <- Pedigree[Pedigree$id.cat %in% c('G','D'), ]
+      NumOff_GD <- table(factor(Ped_GD[,p+1], levels=Parent_todo[[p]]))
+
+      if (minSibSize == "2sib") {
+         # matcheable by PedCompare
+         Dummyfiable_pz <- Parent_todo[[p]][NumOff_GD > 1]
+      } else if (minSibSize == "1sib1GP") {
+        # potentially assignable by sequoia:
+        # also if 1 offspring + at least 1 genotyped/dummy parent (=sibship grandparent)
+        Ped_par <- Pedigree[match(Parent_todo[[p]], Pedigree$id), ]
+        HasGP_GD <- Ped_par$dam %in% Ped_GD$id | Ped_par$sire %in% Ped_GD$id
+        Dummyfiable_pz <- Parent_todo[[p]][NumOff_GD > 1 | (NumOff_GD>0 & HasGP_GD)]
+      }
+
+      Pedigree$id.cat[ Pedigree$id %in% Dummyfiable_pz ] <- 'D'
+      n_dummies_found[p] <- length(Dummyfiable_pz)
+    }
+    if (sum(n_dummies_found)==0)  break
   }
 
-  return( Dummifiable )
+  Pedigree$id.cat[is.na(Pedigree$id.cat)] <- 'X'
+
+  for (x in c("dam", "sire")) {
+    Pedigree[, paste0(x, ".cat")] <- ifelse(Pedigree[[x]] %in% SNPd, 'G',  # genotyped
+                                        ifelse(Pedigree[[x]] %in% Pedigree$id[Pedigree$id.cat=='D'], 'D', 'X'))
+  }
+
+  return( Pedigree )
 }

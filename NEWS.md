@@ -1,6 +1,32 @@
+# sequoia 3.0
+- numerous updates to Fortran code to improve assignment accuracy, including several
+  bug fixes related to monogamous mating systems
+- fix inconsistency in ageprior matrix and its use for grandparents and avuncular pairs
+- `PedCompare`: When dummy parent mismatched 1 or more dummy offspring than it had
+  correct genotyped offspring, all genotyped + dummy offspring were set to 'nomatch'.
+  Now match is kept, and only actual mismatched flagged as such. 
+- `ComparePairs`: New argument 'Pairs_suffix', passed to `getRelM`. 
+- `getRelM`: when only `Pairs` is provided, default (for unlisted pairs) changed
+  from 'U' to 'X'
+- fix bug in `SimGeno`, throwing an error when ParMis=c(0, not-zero)
+- `CalcPairLL`: force to (almost) always calculate LL even when highly unlikely,
+by fixing MaxMismatch to the total number of SNPs and T_filter to -999.0. 
+- `CalcParentProbs`: new function to calculate assignment probabilities for any pedigree
+- `getAssignCat` now also considers parents with only dummyfiable offspring as dummyfiable; 
+ option '1sib' is dropped.
+- `PedCompare`: when an incorrect half-sibling is added to a true singleton-sibship-with-grandparent,
+  this now counts as 1 mismatch; this erroneously was 3 mismatches (entire sibship wrong).
+- in `sequoia`, the default value for `CalcParentLLR` is changed from TRUE to FALSE.
+ 
+
+# sequoia 2.11.5
+- fix bug in Fortran code which causes some parents to not be assigned during `Module='ped'`
+- fix 'Error in par(oldpar): invalid value specified for graphical parameter "plt"' when very small plotting window in newer versions of Rstudio. 
+
 # sequoia 2.11.4
 - `GenoConvert` fake .map output file: change chrom 0 (unmapped) to chrom 1, as SNPs on chromosome 0 get excluded by default by e.g. PLINK & GCTA
 - `CalcRped`: drop dummy parents of 'half founders' from output (1 known + 1 unknown parent not supported by pkg kinship2)
+- fix errors when using data.tables
 
 # sequoia 2.11.3
 - make assignment of grandparents to singletons a bit more conservative
@@ -11,6 +37,7 @@
 # sequoia 2.11
 - improved assignment rate when some birth years are unknown
 - improved messages, with {cli} markup
+- new format of runtime messages, using C script
 - a few minor bugfixes in the Fortran code
 
 # sequoia 2.9.1

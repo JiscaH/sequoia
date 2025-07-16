@@ -36,7 +36,7 @@
 #'    (i.e. positive if ID2 is born before ID1). If \code{NA}, calculated from
 #'    \code{LifeHistData}. Use '999' to explicitly specify 'unknown'.}
 #'  \item{focal}{relationship character abbreviation; PO, FS, HS, GP or U. See
-#'  Details for its effect and explanation of abbreviations. Default: U}
+#'  Details for its effect and explanation of abbreviations. Default: U.}
 #'  \item{patmat}{1=maternal relatives, 2=paternal relatives. Only relevant for
 #'    HS & GP, for which it defaults to Sex1, or 1 if Sex1=3, but is currently
 #'    only predictably implemented for pairs of two genotyped individuals.
@@ -59,6 +59,11 @@
 #'   is present, input parameters with the same name as its items are ignored.
 #'   The list elements 'LifeHist', 'AgePriors', and 'ErrM' are also used if
 #'   present, and override the corresponding input parameters.
+#' @param Module if \code{ped} (full pedigree), turn any non-genotyped parents
+#'   in \code{Pedigree} into dummies to condition upon. If \code{par}, ignore
+#'   any non-genotyped parents.
+#' @param InclDup  logical, include the likelihood for the two samples to be
+#'   duplicates (originating from the same individual) in the output?
 #' @param Plot logical, display scatter plots by \code{\link{PlotPairLL}}.
 #' @inheritParams CalcOHLLR
 #'
@@ -91,11 +96,21 @@
 #'   \item{333}{Excluded from comparison (shouldn't occur)}
 #'   \item{444}{Not implemented (e.g. would create an odd double/triple
 #'     relationship in combination with the provided pedigree)}
-#'   \item{777}{Impossible (e.g. cannot be both full sibling and grandparent)}
+#'   \item{777}{Impossible (e.g. a male (Sex2=2) cannot be mother (patmat=1))}
 #'   \item{888}{Already assigned in the provided pedigree (see \code{dropPar}
 #'     arguments)}
-#'   \item{999}{NA}
+#'   \item{999}{\code{NA}. If all values for the pair are \code{999}, one or both
+#'     individuals are not genotyped and not dummyfiable.}
 #'
+#' @section Why does it say 444 (no can do) for all relationships?:
+#'  This happens when the pair does not pass the initial check which prevents
+#'  impossible configurations in combination with \code{Pedigree}. Specifically,
+#'  it happens when either or both individuals are a parent in the pedigree, but
+#'  \itemize{
+#'    \item the sex in \code{Pairs} is not consistent with that
+#'    \item \code{Pairs} changes the age differences; it is too complex to check
+#'    whether or not this still makes all pedigree links valid. Only setting the
+#'    age difference to 'unknown' via \code{Pairs} is possible.}
 #'
 #' @section Why does it say 777 (impossible)?:
 #'   This function uses the same machinery as \code{sequoia}, which will to save
@@ -109,21 +124,12 @@
 #'     to 1 (maternal relatives, i.e. dam)
 #'   \item a dam is already assigned via \code{Pedigree} and \code{Pairs$dropPar1
 #'     ='none'}, and \code{Pairs$patmat = 1}
-#'   \item \code{Pairs$focal} is not 'U' (the default), and the OH count between the
-#'     two individuals exceeds MaxMismatchOH. This value can be found in
-#'     \code{SeqList$Specs}), and is calculated by \code{\link{CalcMaxMismatch}}
-#'   \item the age difference, either calculated from \code{LifeHistData} or
-#'     specified via \code{Pairs$AgeDif}, is impossible for a parent-offspring
-#'     pair according to the age prior. The latter can be specified via
-#'     \code{AgePrior}, or is taken from \code{SeqList}, or is calculated when
-#'     both \code{Pedigree} and \code{LifeHistData} are provided.
-#'     }
-#'
-#'  For FS (putative full siblings) this happens when e.g. ID1 has a dam
-#'  assigned which is not dropped (\code{Pairs$dropPar1='none'} or
-#'  \code{'sire'}), and the OH count between ID1's dam and ID2 exceeds
-#'  MaxMismatchOH. The easiest way to 'fix' this is by increasing the presumed
-#'  genotyping error rate.
+#'   \item the age difference is zero or otherwise impossible according to the
+#'     age prior. It is either calculated from \code{LifeHistData} or specified
+#'     via \code{Pairs$AgeDif}. The \code{AgePrior} can be specified directly,
+#'     be taken from \code{SeqList}, or calculated  automatically by
+#'     \code{\link{MakeAgePrior}} when both \code{Pedigree} and
+#'     \code{LifeHistData} are provided. }
 #'
 #'
 #' @section Double relationships & focal relationship:
@@ -143,16 +149,35 @@
 #'   clustering, it is counted as HS but not PO -- not omitting from the
 #'   alternative relationship would result in a deadlock.
 #'
+#' @section Dummy individuals:
+#'   For historical reasons, the relationships between a dummy ID1 and ID2 are
+#'   reported *between the sibship and ID2*. So,
+#'   \describe{
+#'  \item{PO}{ID2 replaces dummy ID1; or merge dummy ID2 with dummy ID1}
+#'  \item{FS, HS}{ID1 parent of ID2}
+#'  \item{GP}{ID2 parent of ID1}
+#'  \item{FA,HA}{ID2 FS resp. HS of ID1} }
+#'  If ID1 is genotyped and ID2 is a dummy, the relationships are as when ID2 is
+#'  genotyped.
+#'
+#'  If you wish to retrieve likelihoods for a different set of relationships,
+#'  please contact me at \email{jisca.huisman@gmail.com} .
+#'
 #'
 #' @seealso \code{\link{PlotPairLL}} to plot alternative relationship pairs from
-#'   the output; \code{\link{CalcOHLLR}} to calculate LLR for parents &
-#'   parent-pairs in a pedigree; \code{\link{GetRelM}} to find all pairwise
-#'   relatives according to the pedigree; \code{\link{GetMaybeRel}} to get
-#'   likely relative pairs not in the pedigree.
+#'   the output; \code{\link{LLtoProb}} to transform likelihoods to
+#'   probabilities; \code{\link{CalcParentProbs}} which uses this function to
+#'   calculate parental probabilities; \code{\link{GetRelM}} to find all
+#'   pairwise relatives according to the pedigree; \code{\link{GetMaybeRel}} to
+#'   get likely relative pairs based on the genetic data.
 #'
 #' @examples
-#' CalcPairLL(Pairs = data.frame(ID1='i116_2006_M', ID2='i119_2006_M'),
-#'            GenoM = Geno_griffin, Err = 1e-04, Plot=FALSE)
+#' # Likelihoods depend on the presumed genotyping error rate:
+#' CalcPairLL(Pairs = data.frame(ID1='i042_2003_F', ID2='i015_2001_F'),
+#'            GenoM = Geno_griffin, Err = 1e-7, Plot=FALSE)
+#' CalcPairLL(Pairs = data.frame(ID1='i042_2003_F', ID2='i015_2001_F'),
+#'            GenoM = Geno_griffin, Err = 1e-3, Plot=FALSE)
+#'
 #'
 #' ## likelihoods underlying parent LLR in pedigree:
 #' # Example: dams for bottom 3 individuals
@@ -189,7 +214,7 @@
 #'                                     cbind(FivePairs, focal = "GP")),
 #'                      GenoM = Geno_griffin, Plot=FALSE)
 #' PairLL[PairLL$ID1=="i121_2007_M", ]
-#' # LL(FS)==222 : HSHA, HSGP, FAHA more likely than FS
+#' # LL(FS)==222 : HSHA, HSGP, and/or FAHA more likely than FS
 #' # LL(GP) higher when focal=HS: GP via 'other' parent also considered
 #' # LL(FA) higher when focal=PO: FAHA, or FS of 'other' parent
 #'
@@ -203,8 +228,10 @@ CalcPairLL <- function(Pairs = NULL,
                        LifeHistData = NULL,
                        AgePrior = TRUE,
                        SeqList = NULL,
+                       Module = "ped",
                        Complex = "full",
                        Herm = "no",
+                       InclDup = FALSE,
                        Err = 1e-4,
                        ErrFlavour = "version2.9",
                        Tassign = 0.5,
@@ -217,6 +244,8 @@ CalcPairLL <- function(Pairs = NULL,
   # check genotype data ----
   GenoM <- CheckGeno(GenoM, quiet=TRUE, Plot=FALSE)
   gID <- rownames(GenoM)
+  # Do NOT remove any IDs from GenoM that are not in pedigree & not in pairs:
+  # this affects the allele frequencies, which affects the likelihoods.
 
   # unpack SeqList ----
   if (!is.null(SeqList)) {
@@ -235,7 +264,7 @@ CalcPairLL <- function(Pairs = NULL,
     }
   }
 
-  Ped <- PedPolish(Pedigree, gID, DropNonSNPd=FALSE, NullOK = TRUE)
+  Ped <- PedPolish(Pedigree, gID=gID, DropNonSNPd=FALSE, NullOK=TRUE)
   # Ped=NULL if Pedigree=NULL & gID=NULL
   if (!quiet) {
     if (is.null(Ped)) {
@@ -250,10 +279,11 @@ CalcPairLL <- function(Pairs = NULL,
   LHF$Sex[LHF$Sex==4] <- 3
 
 
-
   # turn IDs into numbers, & turn non-genotyped parents into temporary dummies ----
-  PedN <- PedToNum(Ped, gID, DoDummies = "new")  # list: PedPar - DumPar - Renamed - Nd
-  PairL <- FortifyPairs(Pairs, gID, PedN$Renamed, LHF)  # also checks input
+  PedN <- PedToNum(Ped, gID, DoDummies = ifelse(Module=='ped', 'new', 'no'))
+  # output: list: PedPar - DumPar - Renamed - Nd
+
+  PairL <- FortifyPairs(Pairs, gID, PedN$Renamed, LHF, Ped)  # also checks input
 
 
   # check/make ageprior ----
@@ -296,8 +326,8 @@ CalcPairLL <- function(Pairs = NULL,
 #                       dropPar,
                        Err,
                        ErrFlavour,
-                       Tfilter,
-                       Tassign,
+                       Tfilter = -999.0,   # else some LL not calculated if PO among them/created secondarily is unlikely
+                       Tassign = 0.0,
                        nAgeClasses = nrow(AP),
                        MaxSibshipSize = max(table(Ped$dam), table(Ped$sire), 90,
                                             na.rm=TRUE) +10,
@@ -309,17 +339,8 @@ CalcPairLL <- function(Pairs = NULL,
   }
 
   # MaxMismatch ----
-  # vector with max. mismatches for duplicates, PO pairs, PPO trios
-  if (!"MaxMismatchV" %in% names(PARAM) |   # DUP/OH/ME from version 2.0 onwards
-      !"Specs" %in% names(SeqList)) {
-    sts <- SnpStats(GenoM, Plot=FALSE)
-    PARAM$MaxMismatchV <- setNames(CalcMaxMismatch(Err=PARAM$ErrM,
-                                                   MAF=sts[,"AF"],
-                                                   ErrFlavour=PARAM$ErrFlavour,
-                                                   qntl=0.9999^(1/nrow(GenoM))),
-                                   c("DUP", "OH", "ME"))
-  }
-
+  # from version 2.12 onwards: always calc LL, even with high OH
+  PARAM$MaxMismatchV <- setNames(rep(ncol(GenoM),3), c("DUP", "OH", "ME"))
 
   # check parameter values ----
   CheckParams(PARAM)
@@ -329,6 +350,7 @@ CalcPairLL <- function(Pairs = NULL,
   # call Fortran ----
   Np <- nrow(Pairs)
   FortPARAM <- MkFortParams(PARAM, fun="CalcPairs")
+  nrels <- ifelse(InclDup, 8, 7)
 
   TMP <- .Fortran(getpairll,
                   ng = as.integer(nrow(GenoM)),   # no. genotyped indiv
@@ -336,6 +358,7 @@ CalcPairLL <- function(Pairs = NULL,
                   specsint = as.integer(FortPARAM$SpecsInt),
                   specsdbl = as.double(FortPARAM$SpecsDbl),
                   errv = as.double(FortPARAM$ErrM),
+                  nrels = as.integer(nrels),
                   genofr = as.integer(GenoM),
 
                   byrf = as.integer(c(LHF$BirthYear, LHF$BY.min, LHF$BY.max)),
@@ -350,13 +373,11 @@ CalcPairLL <- function(Pairs = NULL,
 
                   parentsrf = as.integer(PedN$PedPar),
                   dumparrf = as.integer(PedN$DumPar),
-                  llrf = double(7*Np),
-                  toprf = integer(Np),
-                  dlrf = double(Np)
-  )
+                  llrf = double(nrels*Np)
+  )   # TODO: print messages during prep stage
 
   # wrap output ----
-  RelNames <- c("PO", "FS", "HS", "GP", "FA", "HA", "U", "??", "2nd")
+  RelNames <- c("PO", "FS", "HS", "GP", "FA", "HA", "U")
   Pairs.OUT <- with(PairL, data.frame(Pairs[,1:2],
                                       Sex1 = Sex[1:Np],
                                       Sex2 = Sex[(Np+1):(2*Np)],
@@ -368,12 +389,18 @@ CalcPairLL <- function(Pairs = NULL,
                                       stringsAsFactors = FALSE))
   Pairs.OUT$AgeDif[Pairs.OUT$AgeDif == 999] <- NA
 
+  if (InclDup) {
+    RelNames <- c('DUP', RelNames)
+    LLM <- setNames(as.data.frame(VtoM(TMP$llrf, nc=8)), RelNames)
+  } else {
+    LLM <- setNames(as.data.frame(VtoM(TMP$llrf, nc=7)), RelNames)
+  }
+  toprel <- plyr::adply(LLM, 1, find_bestrel)
+
   Pairs.OUT <- cbind(Pairs.OUT,
-                     setNames(as.data.frame(round(VtoM(TMP$llrf, nc=7), 2)),
-                              RelNames[1:7]),
-                     TopRel = RelNames[TMP$toprf],
-                     LLR = round(TMP$dlrf, 2))
-  Pairs.OUT$LLR[Pairs.OUT$LLR == -777] <- NA
+                     round(LLM[,RelNames], 2),
+                     TopRel = toprel$TopRel,
+                     LLR = round(toprel$LLR, 2))
 
   # plot ----
   if (Plot) {
@@ -402,6 +429,7 @@ CalcPairLL <- function(Pairs = NULL,
 #'   matching character IDs to negative numbers, for dummified individuals.
 #'   Element of the list returned by \code{\link{PedToNum}}.
 #' @param LH  lifehistory dataframe, ID - Sex - BirthYear.
+#' @param Ped pedigree, to ensure dams have sex=1 & sires sex=2
 #'
 #' @return A named list, with elements ID - Sex - AgeDif - focal. The first two
 #'   are per individual and thus each have length 2*nrow(Pairs), while the last
@@ -412,7 +440,8 @@ CalcPairLL <- function(Pairs = NULL,
 FortifyPairs <- function(Pairs,   # pairs with character IDs etc
                          gID,
                          Renamed,
-                         LH)
+                         LH,
+                         Ped)
 {
   Pairs <- as.data.frame(Pairs)   # in case it's a matrix
   if (ncol(Pairs)==2) {
@@ -440,8 +469,8 @@ FortifyPairs <- function(Pairs,   # pairs with character IDs etc
   # add LH data ----
   Pairs$zz <- seq_along(Pairs$ID1)   # to fix merge() row order mess
   if (any(is.na(Pairs$AgeDif)) | any(is.na(Pairs$Sex1)) | any(is.na(Pairs$Sex2))) {
-    Pairs <- merge(Pairs, setNames(LH[, 1:3], c("ID1", "Sex1.LH", "BY1")), all.x=TRUE)
     Pairs <- merge(Pairs, setNames(LH[, 1:3], c("ID2", "Sex2.LH", "BY2")), all.x=TRUE)
+    Pairs <- merge(Pairs, setNames(LH[, 1:3], c("ID1", "Sex1.LH", "BY1")), all.x=TRUE)
   }
   Pairs <- Pairs[order(Pairs$zz), ]
 
@@ -458,13 +487,16 @@ FortifyPairs <- function(Pairs,   # pairs with character IDs etc
   }
 
   # sex ----
-  for (x in c("Sex1", "Sex2")) {
+  for (z in 1:2) {
+    x <- paste0('Sex',z)
     if (!all(Pairs[,x] %in% c(1:3, NA)))
       stop("'Sex1' and 'Sex2' in 'Pairs' must be 1=female, 2=male, 3/NA= unknown", call.=FALSE)
     if (any(is.na(Pairs[,x]))) {
       Pairs[,x] <- ifelse(!is.na(Pairs[,x]),
                           Pairs[,x],
-                          Pairs[,paste0(x, ".LH")])
+                          ifelse(Pairs[,z] %in% Ped$dam, 1,
+                                 ifelse(Pairs[,z] %in% Ped$sire, 2,
+                                        Pairs[,paste0(x, ".LH")])))
     }
     Pairs[is.na(Pairs[,x]), x] <- 3
   }
@@ -494,8 +526,8 @@ FortifyPairs <- function(Pairs,   # pairs with character IDs etc
   GenoNums <- setNames(seq_along(gID), gID)
 
   for (x in 1:2) {
-    if (!all(Pairs[,ID[x]] %in% c(gID, unlist(Renamed))))
-      stop("All individuals must be genotyped or dummifiable", call.=FALSE)
+#    if (!all(Pairs[,ID[x]] %in% c(gID, unlist(Renamed))))
+#      stop("All individuals must be genotyped or dummyfiable", call.=FALSE)
     Pairs[, paste0(ID[x], ".num")] <- ifelse(Pairs[, ID[x]] %in% gID,
                                              GenoNums[Pairs[, ID[x]]],
                                              0)
@@ -511,7 +543,7 @@ FortifyPairs <- function(Pairs,   # pairs with character IDs etc
                                                           "num"]
     }
   }
-  if (any(Pairs$ID1.num == 0 | Pairs$ID2.num == 0))  stop("Something went wrong")
+#  if (any(Pairs$ID1.num == 0 | Pairs$ID2.num == 0))  stop("Something went wrong")
 
 
   # paternal/maternal ----
@@ -538,3 +570,49 @@ FortifyPairs <- function(Pairs,   # pairs with character IDs etc
 }
 
 
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+find_bestrel <- function(LL, tiny=0.01)
+{
+  LL[LL > 0] <- NA
+  if (all(is.na(LL)))  return(data.frame(TopRel = 'U', LLR = NA))
+
+  max2 <- function(v) {
+    if (sum(!is.na(v))<2) {
+      NA
+    } else {
+      x <- which.max(v)
+      max(v[-x], na.rm=TRUE)
+    }
+  }
+
+  RelNames <- c("PO", "FS", "HS", "GP", "FA", "HA", "U")
+  if (length(LL)==8)  RelNames <- c('DUP', RelNames)
+
+  mxLL <- max(LL, na.rm=TRUE)
+  n_max <- sum(abs(LL - mxLL) < tiny, na.rm=TRUE)
+  if (n_max == 1) {
+    return(data.frame(TopRel = RelNames[which.max(LL)],
+    LLR = mxLL - max2(LL)))
+  } else {  # several relationships with near-identical LL's
+    r2 <- which(names(LL) %in% c('HS','GP','FA'))
+    if (length(r2)!=3) {
+      if (length(LL)==7) {
+        r2 <- 3:5    # default order: PO-FS-HS-GP-FA-HA-U
+      } else {   # length 8: first one is dup
+        r2 <- 4:6
+      }
+    }
+    if (!all(is.na(LL[r2])) && abs(max(LL[r2],na.rm=TRUE) - mxLL) < tiny &
+        max(LL[r2],na.rm=TRUE) - min(LL[r2],na.rm=TRUE) < tiny) {
+      return(data.frame(TopRel = '2nd',  # some kind of second degree relative
+                  LLR = max(LL[r2],na.rm=TRUE) - max(LL[-r2],na.rm=TRUE)))  # NOTE!
+    } else {
+      return(data.frame(TopRel = '??',
+                  LLR = mxLL - max2(LL)))
+    }
+  }
+}

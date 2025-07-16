@@ -17,14 +17,11 @@
 SpecsToParam <- function(Specs, ErrM = NULL, ErrFlavour = NULL,
                          dimGeno=NULL, ...)
 {
-
-  # backwards compatability
-  if (exists("Module")) {
-    Specs$Module <- Module
-  } else if (!"Module" %in% names(Specs) & 'MaxSibIter' %in% names(Specs)) {
-    Module <- cut(Specs$MaxSibIter,
-                  breaks= c(-Inf, -9, -1, 0, Inf),
-                  labels = c("pre", "dup", "par", "ped"))
+  other_args <- list(...)
+  if ("Module" %in% names(other_args)) {
+    Specs$Module <- other_args$Module
+  } else if (!"Module" %in% names(Specs)) {
+    Specs$Module <- 'ped'  # default
   }
   if (!"Herm" %in% names(Specs)) {
     Specs$Herm <- switch(as.character(Specs$Complexity),
@@ -55,7 +52,6 @@ SpecsToParam <- function(Specs, ErrM = NULL, ErrFlavour = NULL,
                              nAgeClasses,
                              MaxSibshipSize,
                              Module,
-#                             MaxSibIter,
                              DummyPrefix = c(DummyPrefixFemale,
                                              DummyPrefixMale),
                              Complex = Complexity,
@@ -128,14 +124,12 @@ ParamToSpecs <- function(PARAM, TimeStart, ErrFlavour)
                         nAgeClasses = nAgeClasses,
                         MaxSibshipSize = MaxSibshipSize,
                         Module = as.character(Module),
-                    #    MaxSibIter = MaxSibIter,  deprecated (now Module)
                         DummyPrefixFemale = DummyPrefix[1],
                         DummyPrefixMale = DummyPrefix[2],
                         DummyPrefixHerm = DummyPrefix[3],
                         Complexity = Complex,
                         Herm = Herm,
                         UseAge = UseAge,
-                    #    FindMaybeRel = FALSE,   deprecated  (now GetMaybeRel() )
                         CalcLLR = CalcLLR,
                         ErrFlavour = ifelse(length(Err)==9,
                                             "customMatrix",
@@ -184,7 +178,6 @@ ParamToSpecs <- function(PARAM, TimeStart, ErrFlavour)
 #'   \item{ErrM}{double, 3x3 matrix passed as length-9 vector}
 #'   \item{SpecsIntMkPed}{\code{fun='main'} only
 #'     \itemize{
-#'       \item MaxSibIter
 #'       \item AgeEffect, 0=no, 1=yes, 2=extra
 #'       \item CalcLLR, 0=FALSE, 1=TRUE
 #'       \item Herm, 0=no, 1= dam/sire distinction, 2=no dam/sire distinction
@@ -227,10 +220,7 @@ MkFortParams <- function(PARAM, fun="main")
 
   if (fun == "main" | fun == "CalcOH") {
     # ParSib added in SeqParSib()
-    FP$SpecsIntMkPed <- with(PARAM, c(MaxSibIter = ifelse(exists("MaxSibIter"),
-                                             MaxSibIter,
-                                             42),
-                                      AgeEffect = ifelse(exists("UseAge"),
+    FP$SpecsIntMkPed <- with(PARAM, c(AgeEffect = ifelse(exists("UseAge"),
                                                      switch(UseAge,
                                                          no = 0,
                                                          yes = 1,
@@ -294,7 +284,7 @@ CheckParams <- function(PARAM)
                                (!allowNeg & any(xx < 0, na.rm=TRUE)))){
       stop(ErrMsg, call.=FALSE)
     }
-  }
+  }  # TODO: use match.arg() ; stopifnot(). See https://blog.r-hub.io/2022/03/10/input-checking/
 
   # check if in PARAM list ----
   chk("quiet", "value", valid = c(TRUE, FALSE, 'verbose', 'very'))
@@ -310,7 +300,6 @@ CheckParams <- function(PARAM)
 
   chk("MaxMismatchV", "int", n=3)
   chk("MaxSibshipSize", "int")
-  chk("MaxSibIter", "int", allowNeg = TRUE)
   chk("nAgeClasses", "int")
   chk("MaxPairs", "int")
 

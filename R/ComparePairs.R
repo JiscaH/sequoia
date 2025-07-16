@@ -41,6 +41,9 @@
 #'   number of identical relationships and mismatches per relationship, or
 #'   detailed results as a 2xNxN \code{Array} or as a \code{Dataframe}.
 #'   \code{All} returns a list with all four.
+#' @param Pairs_suffix  symbol added to the relationship abbreviations derived
+#'   from \code{Pairs2}, when both \code{Ped2} and \code{Pairs2} are provided.
+#'   Can be an empty string.
 #'
 #' @return Depending on \code{Return}, one of the following, or a list with all:
 #' \item{Counts}{(the default), a matrix with counts, with the classification in
@@ -163,7 +166,8 @@ ComparePairs <- function(Ped1 = NULL,
                          patmat = FALSE,
                          ExcludeDummies = TRUE,
                          DumPrefix = c("F0", "M0"),
-                         Return = "Counts")
+                         Return = "Counts",
+                         Pairs_suffix = '?')
 {
   if(is.null(Ped1)) stop("No 'Ped1' provided")
   Return <- .simpleCap(Return)  # capitalise 1st letter
@@ -185,10 +189,10 @@ ComparePairs <- function(Ped1 = NULL,
 
   # check & polish Pairs2
   if (!is.null(Pairs2)) {
-    if (!class(Pairs2) %in% c("data.frame", "matrix"))  stop("Pairs2 should be a dataframe or matrix")
+    if (!inherits(Pairs2, c("data.frame", "matrix")))  stop("Pairs2 should be a dataframe or matrix")
     if (!any(Pairs2[,1] %in% Ped1$id) & !any(Pairs2[,2] %in% Ped1$id))  stop("no common IDs in Ped1 and Ped2")
     # is 'Pairs2' output from GetMaybeRel?
-    lvls_MaybeRel <- c("PO", "FS", "HS", "GP", "FA", "2nd", "HA", "Q")
+    lvls_MaybeRel <- c("PO", "FS", "HS", "GP", "FA", "2nd", "HA", "Q", "U")
     MR <- all(c("ID1", "ID2", "TopRel", "LLR", "OH") %in% names(Pairs2)) &&  all(Pairs2$TopRel %in% lvls_MaybeRel)
   } else {
     MR <- FALSE
@@ -202,13 +206,13 @@ ComparePairs <- function(Ped1 = NULL,
                      GenBack=GenBack, patmat=patmat, Return="Matrix")
   } else if (is.null(Ped2) & !is.null(Pairs2)) {
     RCM.2 <- GetRelM(Pairs = Pairs2[, 1:3],
-                     GenBack=GenBack, patmat=patmat, Return="Matrix")
-    RCM.2 <- apply(RCM.2, 1, function(x) ifelse(x %in% c('U', 'S'), x, paste0(x, '?')))
+                     GenBack=GenBack, patmat=patmat, Return="Matrix", Pairs_suffix ='')
+#    RCM.2 <- apply(RCM.2, 1, function(x) ifelse(x %in% c('U', 'S'), x, paste0(x, '?')))
   } else if (!is.null(Ped2) & !is.null(Pairs2)) {
     RCM.2 <- GetRelM(Pedigree = Ped2,
                      Pairs = Pairs2[, 1:3],
                      GenBack=GenBack, patmat=patmat, Return="Matrix",
-                     Pairs_suffix = ifelse(MR, '?', '_'))
+                     Pairs_suffix = Pairs_suffix)  #ifelse(MR, '?', '_'))
   } else {
     RCM.2 <- NULL
   }
@@ -254,7 +258,8 @@ ComparePairs <- function(Ped1 = NULL,
                                   "MGF", "PGM", "PGF", "GO",
                                   "FA", "FN", "HA", "HN", "DFC1", "FC1","U", "X")))
 
-  lvls.dup <- c("FS", "HS", "MHS", "PHS", "FC1", "DFC1", "U","X")   # pairs included twice in matrix with same abbreviation
+  lvls.dup.1 <- c("FS", "HS", "MHS", "PHS", "FC1", "DFC1", "U","X")   # pairs included twice in matrix with same abbreviation
+  lvls.dup.2 <- lvls.dup.1
 
   if (!is.null(Ped2)) {  # include all possible levels in output
     lvls2.ped <- lvls[[GenBack]][[ifelse(patmat, "yes", "no")]]
@@ -262,21 +267,22 @@ ComparePairs <- function(Ped1 = NULL,
     lvls2.ped <- "X"
   }
   if (!is.null(Pairs2)) {  # only include levels that are present in Pairs2
-    if (MR) {  # output from GetMaybeRel()
-      lvls2.pairs <- paste0(lvls_MaybeRel, '?')
+    if (!is.null(Ped2)) {
+      lvls2.pairs <- paste0(lvls_MaybeRel, Pairs_suffix)
     } else if (is.factor(Pairs2$TopRel)) {
       lvls2.pairs <- levels(Pairs2$TopRel)
     } else {
-      lvls2.pairs <- sort(unique(na.exclude(Pairs2$TopRel)))
+      lvls2.pairs <- unique(na.exclude(Pairs2$TopRel))
     }
-    lvls.dup <- unique(c(lvls.dup, lvls2.pairs))
+    lvls.dup.2 <- unique(c(lvls.dup.2, lvls2.pairs))
   } else {
     lvls2.pairs <- "X"
   }
   lvls2 <- unique(c(lvls2.ped, lvls2.pairs))
-  if (!is.null(Ped2) & !is.null(Pairs2) & !MR) {  # different suffix used
-    RelRank <- gsub('?$', '_?', RelRank)
-  }
+
+ # if (!is.null(Ped2) & !is.null(Pairs2) & !MR) {  # different suffix used
+#    RelRank <- gsub('?$', '_?', RelRank)
+#  }
   lvls2 <- c(intersect(RelRank, lvls2), setdiff(lvls2, RelRank))  # sort (RelRank defined in utils.R)
 
 
@@ -300,8 +306,8 @@ ComparePairs <- function(Ped1 = NULL,
     tbl <- table(Ped1 = factor(RCA["Ped1",,], levels=lvls.tbl[[GenBack]][[ifelse(patmat, "yes", "no")]]),
                  Ped2 = factor(RCA["Ped2",,], levels=lvls2[lvls2 != "S"]))
 
-    these.dup <- rownames(tbl) %in% lvls.dup
-    those.dup <- colnames(tbl) %in% lvls.dup
+    these.dup <- rownames(tbl) %in% lvls.dup.1
+    those.dup <- colnames(tbl) %in% lvls.dup.2
     tbl[these.dup, those.dup] <- tbl[these.dup, those.dup]/2
     if (Return == "Counts")  return( tbl )
   }

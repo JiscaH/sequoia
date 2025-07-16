@@ -4,7 +4,7 @@
 \alias{FortifyPairs}
 \title{Make Pairs Fortran Compatible}
 \usage{
-FortifyPairs(Pairs, gID, Renamed, LH)
+FortifyPairs(Pairs, gID, Renamed, LH, Ped)
 }
 \arguments{
 \item{Pairs}{dataframe with columns ID1 - ID2 - Sex1 - Sex2 - AgeDif - focal
@@ -17,6 +17,8 @@ matching character IDs to negative numbers, for dummified individuals.
 Element of the list returned by \code{\link{PedToNum}}.}
 
 \item{LH}{lifehistory dataframe, ID - Sex - BirthYear.}
+
+\item{Ped}{pedigree, to ensure dams have sex=1 & sires sex=2}
 }
 \value{
 A named list, with elements ID - Sex - AgeDif - focal. The first two

@@ -33,7 +33,7 @@
 #'   Because the actual true pedigree is (typically) unknown, the provided
 #'   reference pedigree is used as a stand-in and assumed to be the true
 #'   pedigree, with unrelated founders. It is also assumed that the probability
-#'   to be genotyped is equal for all parents; in each iteration, a new random
+#'   to be genotyped is equal for all parents; in each round, a new random
 #'   set of parents (proportion set by \code{ParMis}) is mimicked to be
 #'   non-genotyped. In addition, SNPs are assumed to segregate independently.
 #'
@@ -65,7 +65,7 @@
 #'   and \code{Complex}. May include (part of) \code{SeqList}, a list of sequoia
 #'   output (i.e. as a list-within-a-list). Set to \code{NULL} to use all
 #'   default values.
-#' @param nSim number of iterations of simulate - reconstruct - compare to
+#' @param nSim number of rounds of simulate - reconstruct - compare to
 #'   perform, i.e. number of simulated datasets.
 #' @param nCores number of computer cores to use. If \code{>1}, package
 #'   \pkg{parallel} is used. Set to NULL to use all but one of the available
@@ -74,7 +74,7 @@
 #'   memory may be the limiting factor for the number of cores you can use.
 #' @param quiet suppress messages. \code{TRUE} runs \code{SimGeno} and
 #'   \code{sequoia} quietly, \code{'very'} also suppresses other messages and
-#'   the iteration counter when \code{nCores=1} (there is no iteration counter
+#'   the simulation counter when \code{nCores=1} (there is no simulation counter
 #'   when \code{nCores>1}).
 #'
 #' @return A list, with elements:
@@ -82,9 +82,9 @@
 #'   \item{PedErrors}{See below}
 #'   \item{Pedigree.reference}{the pedigree from which data was simulated}
 #'   \item{LifeHistData}{}
-#'   \item{Pedigree.inferred}{a list with for each iteration the inferred
+#'   \item{Pedigree.inferred}{a list with for each simulation the inferred
 #'     pedigree based on the simulated data}
-#'   \item{SimSNPd}{a list with for each iteration the IDs of the individuals
+#'   \item{SimSNPd}{a list with for each simulation the IDs of the individuals
 #'     simulated to have been genotyped}
 #'   \item{PedComp.fwd}{array with \code{Counts} from the 'forward'
 #'     \code{PedCompare}, from which \code{PedErrors} is calculated}
@@ -104,7 +104,7 @@
 #' \item{pair.conf}{Probability that both dam and sire are correct, given their
 #'   categories}
 #' \item{N}{Number of individuals per category-combination, across all
-#'   \code{nSim} iterations}
+#'   \code{nSim} simulations}
 #'
 #' Array \code{PedErrors} has three dimensions:
 #' \item{class}{\itemize{
@@ -127,11 +127,10 @@
 #'
 #' @examples
 #' # estimate proportion of parents that are genotyped (= 1 - ParMis)
-#' sumry_grif <- SummarySeq(SeqOUT_griffin, Plot=FALSE)
-#' tmp <- apply(sumry_grif$ParentCount['Genotyped',,,],
-#'              MARGIN = c('parentSex', 'parentCat'), FUN = sum)
-#' props <- sweep(tmp, MARGIN='parentCat', STATS = rowSums(tmp), FUN = '/')
-#' 1 - props[,'Genotyped'] / (props[,'Genotyped'] + props[,'Dummy'])
+#' prop_parents_genotyped <- c(
+#'   dam = mean(unique(SeqOUT_griffin$Pedigree$dam) %in% rownames(Geno_griffin)),
+#' sire = mean(unique(SeqOUT_griffin$Pedigree$sire) %in% rownames(Geno_griffin))
+#' )
 #'
 #' # Example for parentage assignment only
 #' conf_grif <- EstConf(Pedigree = SeqOUT_griffin$Pedigree,
@@ -139,7 +138,7 @@
 #'                args.sim = list(nSnp = 150,   # no. in actual data, or what-if
 #'                                SnpError = 5e-3,  # best estimate, or what-if
 #'                                CallRate=0.9,     # from SnpStats()
-#'                                ParMis=c(0.39, 0.20)),  # calc'd above
+#'                                ParMis=c(0.28, 0.22)),  # calc'd above
 #'                args.seq = list(Err=5e-3, Module="par"),  # as in real run
 #'                nSim = 1,   # try-out, proper run >=20 (10 if huge pedigree)
 #'                nCores=1)
@@ -164,6 +163,15 @@
 #' saveRDS(conf_grif[c('ConfProb','PedComp.fwd','RunParams','RunTime','Note')],
 #'    file = 'conf_200SNPs_Err005_Callrate80.RDS')
 #' }
+#'
+#' ## overall assignment rate (AR), error rate (ER) & runtime
+#' AR_max <- sum(!is.na(Ped_griffin$dam)) + sum(!is.na(Ped_griffin$sire))
+#' ER_max <- 2*nrow(Ped_griffin)
+#' PCT <- conf_grif$PedComp.fwd[,'TT',,]   # Total-Total counts
+#' list(AR = mean(apply(PCT[,'Match',],1,sum)/AR_max),  # sum over dam+sire
+#'      ER = mean(apply(PCT[,c('Mismatch','P2only'),],1,sum)/ER_max),
+#'      Time = mean(conf_grif$RunTime)/60)   # runtime in seconds --> minutes
+#'
 #'
 #' ## P(actual FS | inferred as FS) etc.
 #' \dontrun{
@@ -231,8 +239,6 @@ EstConf <- function(Pedigree = NULL,
 
   if ("Module" %in% names(args.seq)) {
     ParSib <- ifelse(args.seq$Module == "ped", "sib", "par")
-  } else if ("MaxSibIter" %in% names(args.seq)) {
-    ParSib <- ifelse(args.seq$MaxSibIter > 0, "sib", "par")
   } else {
     ParSib <- "sib"   # default Module = "ped"
   }
@@ -253,7 +259,7 @@ EstConf <- function(Pedigree = NULL,
   if (is.null(nCores) || nCores>1) {
     if (!requireNamespace("parallel", quietly = TRUE)) {
       if (interactive() & !quiet.EC) {
-        cli::cli_alert_info("Installing package {.pkg parallel} to speed things up... ")
+        cli::cli_alert_info("Installing package {.pkg parallel} to run on multiple cores... ")
       }
       utils::install.packages("parallel")
     }
@@ -325,52 +331,21 @@ EstConf <- function(Pedigree = NULL,
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # confidence probabilities ----
-  nSimz <- ifelse(nSim>1, nSim,2)  # else problems w R auto-dropping dimension
-  CatNames <- c("G", "D", "X")
-  ClassNames <- c("Match", "Mismatch", "P1only", "P2only", "_")
 
-  PC.rev.cd <- array(0, dim = c(nSimz, 3,3,3, 5,5),
-                     dimnames = list(iter = seq_len(nSimz),
-                                     id.cat = CatNames, dam.cat = CatNames, sire.cat = CatNames,
-                                     dam.class = ClassNames, sire.class = ClassNames))
+  # counts for confidence probs, using PedCompare(Ped1 = Ped.inferred, Ped2 = Ped.ref).
+  # function Count_conf() defined below in this file.
+  CountsL <- list()
   for (i in 1:nSim) {
-    PC.rev.cd[i,,,,,] <- PedCompare(Ped1 = Pedigree.inferred[[i]],
-                                    Ped2 = Ped.ref,
-                                    SNPd = SimSNPd[[i]],
-                                    Symmetrical=FALSE, Plot=FALSE)$Counts.detail
+    CountsL[[i]] <- Count_conf(Pedigree.inferred[[i]], Ped.ref, SimSNPd[[i]])
   }
 
-  Ntot <- apply(PC.rev.cd, c('id.cat', 'dam.cat', 'sire.cat'), sum)
-  OK <- list('G' = 'Match',
-             'D' = 'Match',
-             'X' = c('P2only', '_'))
-  confA <- array(dim = c(3,3,3,3),
-                 dimnames = c(list(paste0(c('dam', 'sire', 'pair'), '.conf')),
-                              dimnames(PC.rev.cd)[2:4]))
-  for (i in c('G','D','X')) {
-    confA['dam.conf' ,,i,] <- apply(PC.rev.cd[,,i,,OK[[i]],], c('id.cat', 'sire.cat'), sum) / Ntot[,i,]
-    confA['sire.conf',,,i] <- apply(PC.rev.cd[,,,i,,OK[[i]]], c('id.cat', 'dam.cat'), sum) / Ntot[,,i]
-    for (j in c('G','D','X')) {
-      confA['pair.conf',,i,j] <- apply(PC.rev.cd[,,i,j,OK[[i]],OK[[j]]], 'id.cat', sum) / Ntot[,i,j]
-    }
-  }
-
-  confA[c("dam.conf" , "pair.conf"),,"X",] <- NA  # no dam
-  confA[c("sire.conf", "pair.conf"),,,"X"] <- NA  # no sire
-
-  Conf.df <- plyr::adply(confA, .margins=2:4)
-  Conf.df <- merge(Conf.df,
-                   plyr::adply(Ntot, .margins=3:1, function(x) data.frame(N=x)))
-  Conf.df <- Conf.df[Conf.df$id.cat != 'X',]
-  if (ParSib == "par") {
-    Conf.df <- Conf.df[Conf.df$id.cat == 'G' & Conf.df$dam.cat %in% c('G','X') &
-                         Conf.df$sire.cat %in% c('G','X'), ]
-  }
-  Conf.df <- Conf.df[order(Conf.df$id.cat, Conf.df$dam.cat, Conf.df$sire.cat), ]
-
+  # sum across iterations & calculate proportions
+  # function Counts2Conf() defined below in this file.
+  Conf.df <- Counts2Conf(CountsL)
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # assignment errors (ignores co-parent) ----
+  nSimz <- ifelse(nSim>1, nSim,2)  # else problems w R auto-dropping dimension
   PedComp.fwd <-  array(0, dim=c(nSimz, 7,5,2),
                         dimnames = list(iter = seq_len(nSimz),
                                         cat = c("GG", "GD", "GT", "DG", "DD", "DT", "TT"),
@@ -407,4 +382,85 @@ EstConf <- function(Pedigree = NULL,
                PedComp.fwd = PedComp.fwd,
                RunParams = RunParams,
                RunTime = RunTime) )
+}
+
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# counts for confidence calculations:
+# Probability that an parent in the inferred pedigree is correct (is also the
+# parent in the reference pedigree).  This function is called by EstConf(),
+# which combines its result across multiple inferred pedigrees.
+
+#' @keywords internal
+
+Count_conf <- function(Ped.inferred, Ped.ref, SNPd) {
+
+  # run PedCompare 'reversed': for each inferred category, you want the proportion correct
+  PCCD <- PedCompare(Ped1 = Ped.inferred, Ped2 = Ped.ref, SNPd = SNPd,
+                    Symmetrical=FALSE, Plot=FALSE)$Counts.detail
+
+  OK <- list('G' = 'Match',
+             'D' = 'Match',
+             'X' = c('P2only', '_'))   # no parent assigned in Ped.inferred (includes non-assignable)
+
+  conf.counts <- array(0, dim = c(4,3,3,3),
+                 dimnames = c(list(c('N', paste0(c('dam', 'sire', 'pair'), '.OK'))),
+                              dimnames(PCCD)[1:3]))
+
+  # Totals per category (=denominator for the proportion)
+  conf.counts['N',,,] <- apply(PCCD, c('id.cat', 'dam.cat', 'sire.cat'), sum)
+
+  for (i in c('G','D','X')) {
+    conf.counts['dam.OK' ,,i,] <- apply(PCCD[,i,,OK[[i]],], c('id.cat', 'sire.cat'), sum)
+    conf.counts['sire.OK',,,i] <- apply(PCCD[,,i,,OK[[i]]], c('id.cat', 'dam.cat'), sum)
+    for (j in c('G','D','X')) {
+      conf.counts['pair.OK',,i,j] <- apply(PCCD[,i,j,OK[[i]],OK[[j]], drop=FALSE], 'id.cat', sum)
+    }
+  }
+
+  return( conf.counts )
+}
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# take list of outputs from Count_conf(), calculate proportions, output as dataframe
+
+#' @keywords internal
+
+Counts2Conf <- function(countsL) {
+
+  # sum across iterations
+  if (length(countsL)>1) {
+    countsA <- apply( plyr::laply(countsL, function(x) x), 2:5, sum)
+  } else {
+    countsA <- countsL[[1]]
+  }
+
+  # array -> data.frame
+  Conf.df <- plyr::adply(countsA[,c('G','D'),,], .margins=2:4)
+
+  # counts -> proportions
+  for (x in c('dam', 'sire', 'pair')) {
+    Conf.df[[paste0(x,'.conf')]] <- Conf.df[[paste0(x,'.OK')]] / Conf.df[['N']]
+    Conf.df[[paste0(x,'.OK')]] <- NULL   # drop column
+  }
+
+  # if parentage assignment only, drop all dummy related rows
+  Ntot <- apply(countsA, 'id.cat', sum)
+  if (Ntot[['D']] == 0) {
+    Conf.df <- Conf.df[Conf.df$id.cat == 'G' & Conf.df$dam.cat %in% c('G','X') &
+                         Conf.df$sire.cat %in% c('G','X'), ]
+  }
+
+  # sort rows & columns
+  Conf.df <- Conf.df[order(Conf.df$id.cat, Conf.df$dam.cat, Conf.df$sire.cat),
+                     c('id.cat', 'dam.cat', 'sire.cat', 'dam.conf', 'sire.conf', 'pair.conf', 'N')]
+
+  return( Conf.df )
 }

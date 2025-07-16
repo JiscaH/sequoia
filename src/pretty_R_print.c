@@ -12,14 +12,15 @@
 * and no. assigned dams & sires + total likelihood at end of round/step.
 */
 void F77_SUB(rprint_status_tbl_header)(void) {
-    Rprintf("%8s | %2s | %10s | %10s | %5s | %5s | %10s \n",
-            "Time", "R", "Step", "progress", "dams", "sires", "Total LL"); 
-    Rprintf("-------- | -- | ---------- | ---------- | ----- | ----- | ----------\n");
+    Rprintf("\n");
+    Rprintf("%8s | %2s | %10s | %10s | %5s | %5s | %5s | %10s \n",
+            " Time   ", " R", " Step     ", " Progress ", "Dams ", "Sires", " GPs ", "Total LL"); 
+    Rprintf("-------- | -- | ---------- | ---------- | ----- | ----- | ----- | ----------\n");
 }
 
 
-
 void F77_SUB(rprint_status_tbl_entry)(int *time, int *iter, char* step, int *n_parents, double *total_LL) {
+    Rprintf("\n");
     Rprintf("%02d:%02d:%02d | %2d | %.10s |            | %5d | %5d | %10.1f \n", 
             time[0], time[1], time[2], *iter, step, n_parents[0], n_parents[1], *total_LL);
 }
@@ -48,7 +49,9 @@ void F77_SUB(rprint_status_tbl_a)(int *time, int *iter, int *step) {
     } else if (*step == 91) {
       stepname = "est byears";
     } else if (*step == 92) {
-      stepname = "calc LLR  ";
+      stepname = "Parent LLR";
+    } else if (*step == 93) {
+      stepname = "Dummy LLR ";
     } else if (*step == 100) {
       stepname = "initial   ";
     } else if (*step == 101) {
@@ -66,8 +69,8 @@ void F77_SUB(rprint_status_tbl_a)(int *time, int *iter, int *step) {
     Rprintf("%02d:%02d:%02d | %2d | %.10s | ", time[0], time[1], time[2], *iter, stepname);
 }
 
-void F77_SUB(rprint_status_tbl_b)(int *n_parents, double *total_LL) {
-    Rprintf(" | %5d | %5d | %10.1f \n", n_parents[0], n_parents[1], *total_LL);
+void F77_SUB(rprint_status_tbl_b)(int *n_parents, int *n_gp, double *total_LL) {
+    Rprintf(" | %5d | %5d | %5d | %10.1f \n", n_parents[0], n_parents[1], *n_gp, *total_LL);
 }
 
 /* in the for loop of each step, print progress dots at every 10% */
@@ -84,10 +87,8 @@ void F77_SUB(rprint_status_tbl_eol)(void) {
 }
  
 
-
 /* progress bar for GetMaybeRel() etc */
 void F77_SUB(rprint_progbar_header)(void) {
-    Rprintf("\n");
     Rprintf(" 0   10  20  30  40  50  60  70  80  90  100%% \n");
     Rprintf(" |   |   |   |   |   |   |   |   |   |   |\n  ");
 }

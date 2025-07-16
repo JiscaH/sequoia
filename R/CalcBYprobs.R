@@ -40,12 +40,20 @@
 #'   relationships.
 #'
 #' @examples
-#' BYprobs <- CalcBYprobs(Pedigree = SeqOUT_griffin$Pedigree,
-#'                        LifeHistData = SeqOUT_griffin$LifeHist)
+#' # exclude 20 random individuals from LH_griffin, then estimate their birth
+#' # years from the birth years of their parents and/or offspring:
+#' BYprobs <- CalcBYprobs(Pedigree = Ped_griffin,
+#'                        LifeHistData = LH_griffin[-sample(1:200, 20),])
+#' utils::head(BYprobs)
+#' # For some individuals, the most-likely birth year will not be the actual
+#' # birth year. But with sufficient quantity and quality of information, the
+#' # actual birth year will be among the plausible ones, and be close to the
+#' # most-likely birth year.
 #' \dontrun{
 #' # heatmap
 #' lattice::levelplot(t(BYprobs), aspect="fill", col.regions=hcl.colors)
 #' }
+#'
 #'
 #' @useDynLib sequoia, .registration = TRUE
 #

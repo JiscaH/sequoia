@@ -4,7 +4,13 @@
 \alias{CalcMaxMismatch}
 \title{Maximum Number of Mismatches}
 \usage{
-CalcMaxMismatch(Err, MAF, ErrFlavour = "version2.9", qntl = 1 - 1e-05)
+CalcMaxMismatch(
+  Err,
+  MAF,
+  ErrFlavour = "version2.9",
+  qntl = 1 - 1e-05,
+  Return = "Counts"
+)
 }
 \arguments{
 \item{Err}{estimated genotyping error rate, as a single number or 3x3 matrix
@@ -24,6 +30,10 @@ choose from inbuilt ones as used in sequoia 'version2.0', 'version1.3', or
 individual-level probability. For a desired dataset-level probability
 quantile \eqn{Q}, use \code{qntl}\eqn{= Q^{(1/N)}}, where \eqn{N} is
 the number of individuals.}
+
+\item{Return}{Either 'Counts' to return the threshold counts (default),
+or 'Probs' to return the mismatch probabilities from which these counts
+are calculated.}
 }
 \value{
 A vector with three integers:

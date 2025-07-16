@@ -324,7 +324,7 @@ PlotSeqSum <- function(SeqSum, Pedigree=NULL, Panels="all", ask=TRUE)
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # plotting specs
   oldpar <- par(no.readonly = TRUE)
-  oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig")]   # current plot dimensions, not setable. bug?
+  oldpar <- oldpar[!names(oldpar) %in% c("pin", "fig",'plt')]   # current plot dimensions, not setable. bug?
   par(mai=c(.9, 1.8, 1.4,.3), mfrow=c(1,1))
 
   col.damsire <- matrix(c("darkred", "firebrick2", "pink", "lightgrey",

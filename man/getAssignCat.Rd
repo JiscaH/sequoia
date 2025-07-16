@@ -11,17 +11,13 @@ getAssignCat(Pedigree, SNPd, minSibSize = "1sib1GP")
 
 \item{SNPd}{character vector with ids of genotyped individuals.}
 
-\item{minSibSize}{minimum requirements to be considered 'dummifiable':
+\item{minSibSize}{minimum requirements to be considered dummyfiable is 1
+genotyped offspring, and
  \itemize{
-    \item '1sib' : sibship of size 1, i.e. the non-genotyped individual has
-      at least 1 genotyped offspring. If there is no sibship-grandparent
-      this isn't really a sibship, but can be useful in some situations.
-      Used by \code{\link{CalcOHLLR}}.
-    \item '1sib1GP': sibship of size 1 with at least 1 genotyped
-      grandparent. The minimum to be potentially assignable by
-      \code{\link{sequoia}}.
-    \item '2sib': at least 2 siblings, with or without grandparents. Used
-       by \code{\link{PedCompare}}.
+    \item '1sib1GP': at least 1 grandparent (G or D) or 1 more offspring (G
+    or D); these are potentially assignable by \code{\link{sequoia}}
+    \item '2sib': at least 1 more offspring (i.e. 2 siblings). Old default for
+       \code{\link{PedCompare}}.
 }.}
 }
 \value{
@@ -29,24 +25,29 @@ The \code{Pedigree} dataframe with 3 additional columns,
   \code{id.cat}, \code{dam.cat} and \code{sire.cat}, with coding similar to
   that used by \code{\link{PedCompare}}:
 \item{G}{Genotyped}
-\item{D}{Dummy or 'dummifiable'}
-\item{X}{Not genotyped and not dummifiable, or no parent in pedigree}
+\item{D}{Dummy or 'dummyfiable'}
+\item{X}{Not genotyped and not dummyfiable}
 }
 \description{
-Identify which individuals are SNP genotyped, and which can
-  potentially be substituted by a dummy individual ('Dummifiable').
+Identify which individuals are SNP genotyped (G), and which can
+  potentially be substituted by a dummy individual ('Dummyfiable', D).
 }
 \details{
-It is assumed that all individuals in \code{SNPd} have been
+Non-genotyped individuals can potentially be substituted by a dummy
+  during pedigree reconstruction by \code{\link{sequoia}} when they have at least one genotyped
+  offspring, and either one additional offspring (genotyped or dummy) or an
+  genotyped/dummy parent (i.e. a grandparent to the genotyped offspring).
+
+  Note that this is the bare minimum requirement; e.g. grandparents are often
+  indistinguishable from full avuncular (see \code{\link{sequoia}} and
+  vignette for details). G-G parent-offspring pairs are only assignable if
+  there is age information, or information from the surrounding pedigree, to
+  tell which of the two is the parent.
+
+ It is assumed that all individuals in \code{SNPd} have been
   genotyped for a sufficient number of SNPs. To identify samples with a
   too-low call rate, use \code{\link{CheckGeno}}. To calculate the call rate
   for all samples, see the examples below.
-
-  Some parents indicated here as assignable may never be assigned by sequoia,
-  for example parent-offspring pairs where it cannot be determined which is
-  the older of the two, or grandparents that are indistinguishable from full
-  avuncular (i.e. genetics inconclusive because the candidate has no parent
-  assigned, and ageprior inconclusive).
 }
 \examples{
 PedA <- getAssignCat(Ped_HSg5, rownames(SimGeno_example))

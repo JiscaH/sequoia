@@ -93,20 +93,19 @@ static R_NativePrimitiveArgType pairLLType[] = {
   INTSXP,  // 3 SpecsInt
   REALSXP, // 4 SpecsDbl
   REALSXP, // 5 ErrV
-  INTSXP,  // 6 GenoFR
-  INTSXP,  // 7 BYRF
-  REALSXP, // 8 AP
-  INTSXP,  // 9 pairIDs
-	INTSXP,  // 10 pairSex
-  INTSXP,  // 11 pairAgeDiff
-  INTSXP,  // 12 pairFocal
-  INTSXP,  // 13 pairk
-  INTSXP,  // 14 dropP
-	INTSXP,  // 15 parentsRF
-  INTSXP,  // 16 dumparRF
-	REALSXP, // 17 LLRF
-	INTSXP,  // 18 TopRF
-	REALSXP, // 19 dLRF
+  INTSXP,  // 6 nrels
+  INTSXP,  // 7 GenoFR
+  INTSXP,  // 8 BYRF
+  REALSXP, // 9 AP
+  INTSXP,  // 10 pairIDs
+	INTSXP,  // 11 pairSex
+  INTSXP,  // 12 pairAgeDiff
+  INTSXP,  // 13 pairFocal
+  INTSXP,  // 14 pairk
+  INTSXP,  // 15 dropP
+	INTSXP,  // 16 parentsRF
+  INTSXP,  // 17 dumparRF
+	REALSXP, // 18 LLRF
 };
 
 static R_NativePrimitiveArgType BYprobType[] = {
@@ -168,9 +167,9 @@ extern void F77_NAME(getpedllr)(int *ng, int *specsint, int *specsintmkped,
   double *dumlrrf, int *dumbyrf);
 
 extern void F77_NAME(getpairll)(int *ng, int *np, int *specsint, double *specsdbl,
-  double *errv, int *genofr, int *byrf, double *aprf,
+  double *errv, int *nrels, int *genofr, int *byrf, double *aprf,
   int *pairids, int *pairsex, int *pairagediff, int *pairfocal, int *pairk,
-  int *dropp, int *parentsrf, int *dumparrf, double *llrf, int *toprf, double *dlrf);
+  int *dropp, int *parentsrf, int *dumparrf, double *llrf);
 
 extern void F77_NAME(getbyprobs)(int *ng, int *nx, int *nap, int *nyearsin, int *byrf,
   int *lyrf, double *aprf, int *parentsrf, double *byprobv);
@@ -191,7 +190,7 @@ static const R_FortranMethodDef FortranEntries[] = {
 	{"duplicates", (DL_FUNC) &F77_NAME(duplicates), 13, dupType},
   {"findambig", (DL_FUNC) &F77_NAME(findambig), 20, ambigType},
 	{"getpedllr", (DL_FUNC) &F77_NAME(getpedllr), 16, pedLLRType},
-  {"getpairll", (DL_FUNC) &F77_NAME(getpairll), 19, pairLLType},
+  {"getpairll", (DL_FUNC) &F77_NAME(getpairll), 18, pairLLType},
   {"getbyprobs", (DL_FUNC) &F77_NAME(getbyprobs), 9, BYprobType},
   {"deallocall", (DL_FUNC) &F77_NAME(deallocall), 0},
 	{"mkerrors", (DL_FUNC) &F77_NAME(mkerrors), 5, eType},

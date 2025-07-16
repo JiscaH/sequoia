@@ -12,7 +12,8 @@ ComparePairs(
   patmat = FALSE,
   ExcludeDummies = TRUE,
   DumPrefix = c("F0", "M0"),
-  Return = "Counts"
+  Return = "Counts",
+  Pairs_suffix = "?"
 )
 }
 \arguments{
@@ -47,6 +48,10 @@ females (males).}
 number of identical relationships and mismatches per relationship, or
 detailed results as a 2xNxN \code{Array} or as a \code{Dataframe}.
 \code{All} returns a list with all four.}
+
+\item{Pairs_suffix}{symbol added to the relationship abbreviations derived
+from \code{Pairs2}, when both \code{Ped2} and \code{Pairs2} are provided.
+Can be an empty string.}
 }
 \value{
 Depending on \code{Return}, one of the following, or a list with all:

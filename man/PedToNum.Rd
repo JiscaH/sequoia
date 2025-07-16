@@ -42,8 +42,8 @@ Genotyped individuals get rownumber in genotype matrix,
   number series will overlap for dummy males and dummy females.
 }
 \details{
-If \code{DoDummies='new'}, \code{\link{GetDummifiable}} is used
-  with \code{minSibSize = "1sib"}, and any existing dummy coding is ignored
+If \code{DoDummies='new'}, \code{\link{getAssignCat}} is used
+  with \code{minSibSize ="1sib1GP"}, and any existing dummy coding is ignored
   (F0001, F0002 may become -3, -6). If \code{DoDummies='old'}, the existing
   dummy coding is respected (F0001, F0002 will become -1, -2), but other
   non-genotyped individuals are ignored.

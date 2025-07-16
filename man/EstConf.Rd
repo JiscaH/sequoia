@@ -32,7 +32,7 @@ and \code{Complex}. May include (part of) \code{SeqList}, a list of sequoia
 output (i.e. as a list-within-a-list). Set to \code{NULL} to use all
 default values.}
 
-\item{nSim}{number of iterations of simulate - reconstruct - compare to
+\item{nSim}{number of rounds of simulate - reconstruct - compare to
 perform, i.e. number of simulated datasets.}
 
 \item{nCores}{number of computer cores to use. If \code{>1}, package
@@ -43,7 +43,7 @@ memory may be the limiting factor for the number of cores you can use.}
 
 \item{quiet}{suppress messages. \code{TRUE} runs \code{SimGeno} and
 \code{sequoia} quietly, \code{'very'} also suppresses other messages and
-the iteration counter when \code{nCores=1} (there is no iteration counter
+the simulation counter when \code{nCores=1} (there is no simulation counter
 when \code{nCores>1}).}
 }
 \value{
@@ -52,9 +52,9 @@ A list, with elements:
   \item{PedErrors}{See below}
   \item{Pedigree.reference}{the pedigree from which data was simulated}
   \item{LifeHistData}{}
-  \item{Pedigree.inferred}{a list with for each iteration the inferred
+  \item{Pedigree.inferred}{a list with for each simulation the inferred
     pedigree based on the simulated data}
-  \item{SimSNPd}{a list with for each iteration the IDs of the individuals
+  \item{SimSNPd}{a list with for each simulation the IDs of the individuals
     simulated to have been genotyped}
   \item{PedComp.fwd}{array with \code{Counts} from the 'forward'
     \code{PedCompare}, from which \code{PedErrors} is calculated}
@@ -74,7 +74,7 @@ Dataframe \code{ConfProb} has 7 columns:
 \item{pair.conf}{Probability that both dam and sire are correct, given their
   categories}
 \item{N}{Number of individuals per category-combination, across all
-  \code{nSim} iterations}
+  \code{nSim} simulations}
 
 Array \code{PedErrors} has three dimensions:
 \item{class}{\itemize{
@@ -124,7 +124,7 @@ The confidence probability is taken as the number of correct
   Because the actual true pedigree is (typically) unknown, the provided
   reference pedigree is used as a stand-in and assumed to be the true
   pedigree, with unrelated founders. It is also assumed that the probability
-  to be genotyped is equal for all parents; in each iteration, a new random
+  to be genotyped is equal for all parents; in each round, a new random
   set of parents (proportion set by \code{ParMis}) is mimicked to be
   non-genotyped. In addition, SNPs are assumed to segregate independently.
 
@@ -150,11 +150,10 @@ The confidence probability is taken as the number of correct
 
 \examples{
 # estimate proportion of parents that are genotyped (= 1 - ParMis)
-sumry_grif <- SummarySeq(SeqOUT_griffin, Plot=FALSE)
-tmp <- apply(sumry_grif$ParentCount['Genotyped',,,],
-             MARGIN = c('parentSex', 'parentCat'), FUN = sum)
-props <- sweep(tmp, MARGIN='parentCat', STATS = rowSums(tmp), FUN = '/')
-1 - props[,'Genotyped'] / (props[,'Genotyped'] + props[,'Dummy'])
+prop_parents_genotyped <- c(
+  dam = mean(unique(SeqOUT_griffin$Pedigree$dam) \%in\% rownames(Geno_griffin)),
+sire = mean(unique(SeqOUT_griffin$Pedigree$sire) \%in\% rownames(Geno_griffin))
+)
 
 # Example for parentage assignment only
 conf_grif <- EstConf(Pedigree = SeqOUT_griffin$Pedigree,
@@ -162,7 +161,7 @@ conf_grif <- EstConf(Pedigree = SeqOUT_griffin$Pedigree,
                args.sim = list(nSnp = 150,   # no. in actual data, or what-if
                                SnpError = 5e-3,  # best estimate, or what-if
                                CallRate=0.9,     # from SnpStats()
-                               ParMis=c(0.39, 0.20)),  # calc'd above
+                               ParMis=c(0.28, 0.22)),  # calc'd above
                args.seq = list(Err=5e-3, Module="par"),  # as in real run
                nSim = 1,   # try-out, proper run >=20 (10 if huge pedigree)
                nCores=1)
@@ -187,6 +186,15 @@ conf_griff[['Note']] <- 'You could add a note'
 saveRDS(conf_grif[c('ConfProb','PedComp.fwd','RunParams','RunTime','Note')],
    file = 'conf_200SNPs_Err005_Callrate80.RDS')
 }
+
+## overall assignment rate (AR), error rate (ER) & runtime
+AR_max <- sum(!is.na(Ped_griffin$dam)) + sum(!is.na(Ped_griffin$sire))
+ER_max <- 2*nrow(Ped_griffin)
+PCT <- conf_grif$PedComp.fwd[,'TT',,]   # Total-Total counts
+list(AR = mean(apply(PCT[,'Match',],1,sum)/AR_max),  # sum over dam+sire
+     ER = mean(apply(PCT[,c('Mismatch','P2only'),],1,sum)/ER_max),
+     Time = mean(conf_grif$RunTime)/60)   # runtime in seconds --> minutes
+
 
 ## P(actual FS | inferred as FS) etc.
 \dontrun{

@@ -25,8 +25,8 @@
 #'     for each dummified individual}
 #'   \item{Nd}{a length 2 vector, no. dummies found/created for dams and sires}
 #'
-#' @details  If \code{DoDummies='new'}, \code{\link{GetDummifiable}} is used
-#'   with \code{minSibSize = "1sib"}, and any existing dummy coding is ignored
+#' @details  If \code{DoDummies='new'}, \code{\link{getAssignCat}} is used
+#'   with \code{minSibSize ="1sib1GP"}, and any existing dummy coding is ignored
 #'   (F0001, F0002 may become -3, -6). If \code{DoDummies='old'}, the existing
 #'   dummy coding is respected (F0001, F0002 will become -1, -2), but other
 #'   non-genotyped individuals are ignored.
@@ -62,10 +62,13 @@ PedToNum <- function(Pedigree = NULL,
   # Dummy renaming tables ----
   Renamed <- list(dam = data.frame(), sire=data.frame())
   if (DoDummies == "new") {
-    Dummifiable <- GetDummifiable(Pedigree[,1:3], gID, minSibSize = "1sib")
+    PedC <- getAssignCat(Pedigree[,1:3], gID, minSibSize = "1sib1GP")
+    # remove duplicates & NA's with intersect()
+    Dummyfiable <- with(PedC, list(dam = intersect(dam, id[id.cat=='D']),
+                                     sire = intersect(sire, id[id.cat=='D'])))
     for (k in 1:2) {
-      Renamed[[k]] <- data.frame(name = Dummifiable[[k]],
-                                 num = -seq_along(Dummifiable[[k]]),
+      Renamed[[k]] <- data.frame(name = Dummyfiable[[k]],
+                                 num = -seq_along(Dummyfiable[[k]]),
                                  stringsAsFactors = FALSE)
     }
   } else if (DoDummies == "old") {

@@ -31,7 +31,7 @@
 #'   (Genotyped/Dummy/X), use the 'highest' category across the two pedigrees
 #'   (\code{TRUE}, default) or only consider \code{Ped1} (\code{Symmetrical =
 #'   FALSE}).
-#' @param minSibSize  minimum requirements to be considered 'dummifiable',
+#' @param minSibSize  minimum requirements to be considered 'dummyfiable',
 #'   passed to \code{\link{getAssignCat}}:
 #'   \itemize{
 #'      \item '1sib' : sibship of size 1, with or without grandparents. The
@@ -133,7 +133,7 @@
 #'   avuncular (i.e. genetics inconclusive because the candidate has no parent
 #'   assigned, and ageprior inconclusive).
 #'
-#' @section Dummifiable:
+#' @section Dummyfiable:
 #'   Considered as potential dummy individuals are all non-genotyped individuals
 #'   in Pedigree 1 who have, according to either pedigree, at least 2 genotyped
 #'   offspring, or at least one genotyped offspring and a genotyped parent.
@@ -207,6 +207,11 @@ PedCompare <- function(Ped1 = NULL,
   Ped2 <- PedPolish(Ped2, ZeroToNA=TRUE, NullOK = FALSE, StopIfInvalid=FALSE, KeepAllColumns=FALSE)
   if (!any(Ped2$id %in% Ped1$id))  stop("no common IDs in Ped1 and Ped2")
 
+  if (length(DumPrefix)>3 && sum(DumPrefix %in% Ped2$id)>3 && is.null(SNPd)) {  # SNPd provided as 3rd arg w/o name
+    SNPd <- DumPrefix
+    DumPrefix <- c("F0", "M0")
+  }
+
   if (is.null(SNPd)) {
     SNPd <- intersect(Ped2$id, Ped1$id)
     if (!is.null(DumPrefix)) {
@@ -246,12 +251,12 @@ PedCompare <- function(Ped1 = NULL,
 
       if (length(Sibs1[[p]])>0 & length(Sibs2)>0) {
         # This does the actual matching:
+        # tdf: transpose matrix to data.frame
         SibScore[[p]] <- tdf(sapply(Sibs1[[p]], SibMatch, Sibs2, SNPd))
 
         if (length(stats::na.exclude(SibScore[[p]][, "Best"])) >
             length(unique(stats::na.exclude(SibScore[[p]][, "Best"])))) {
-          SibScore[[p]] <- SibScore[[p]][order(SibScore[[p]][, "OK"],
-                                               decreasing=TRUE), ]
+          SibScore[[p]] <- SibScore[[p]][order(-SibScore[[p]][, "OK"], SibScore[[p]][, "Tot"]), ]
           dups <- duplicated(SibScore[[p]][, "Best"], incomparables=NA)
           BestS.d <- unique(SibScore[[p]]$Best[dups])
           if (sum(dups) > 1) {
@@ -262,7 +267,7 @@ PedCompare <- function(Ped1 = NULL,
           SibScore[[p]][dups, c("Best", "OK")] <- NA
           for (s in seq_along(BestS.d)) {
             tmp <- SibScore[[p]][which(SibScore[[p]]$Best==BestS.d[s]), ]
-            if (tmp$OK==1 & tmp$Er>=1) {
+            if (tmp$OK==1 & tmp$Er>1) {
               SibScore[[p]][which(SibScore[[p]]$Best==BestS.d[s]),
                             c("Best", "OK")] <- NA
             }
@@ -305,16 +310,24 @@ PedCompare <- function(Ped1 = NULL,
   PedY <- merge(PedY, stats::setNames(Ped1, c("id.r", "dam.1", "sire.1" )),
                 all=TRUE, sort=FALSE)
 
+  # check that each dummy is still matched to 1 ID in ped1,
+  # when considering dummy-dummy assignments
   for (p in 1:2) {
-    PedTmp <- PedY[which(!PedY[,Par[p,2]] %in% SNPd &
-                           !is.na(PedY[,Par[p,2]]) &
-                           PedY[,Par[p,3]]!="nomatch"),]
+    PedTmp <- PedY[which(!PedY[,Par[p,2]] %in% SNPd &    # parent in ped2 not genotyped
+                           !is.na(PedY[,Par[p,2]]) &     # parent in ped2 not missing
+                           PedY[,Par[p,3]]!="nomatch"),] # parent in ped1 not already considered a nomatch
     tbl <- table(PedTmp[,Par[p,2]])
     npar1 <- plyr::daply(PedTmp, Par[p,2],
                    function(x) length(unique(stats::na.exclude(x[,Par[p,1]]))))
-    unmatch <- names(which(c(tbl)==npar1 & npar1>1))
-    if (length(unmatch)>0) {
-      PedY[which(PedY[,Par[p,2]] %in% unmatch), Par[p,3]] <- "nomatch"
+    multimatch2 <- names(which(c(tbl)==npar1 & npar1>1))
+    for (name2 in multimatch2) {
+      name1 <- rownames(SibScore[[p]])[which(SibScore[[p]][['Best']]==name2)]
+      VC <- Vcomp(Infrd = PedTmp[PedTmp[,Par[p,2]]==name2,'id'],
+            Simld = PedTmp[PedTmp[,Par[p,1]]==name1,'id'],
+            SNPd = PedY[,'id'])  # SNPd + dummies
+      if (VC['err'] > VC['both']) {
+        PedY[which(PedY[,Par[p,2]]==name2), Par[p,3]] <- "nomatch"
+      }   # 2025-02-13 edit: nomatch only if no. mismatches > no. matches
     }
   }
   PedY <- PedY[, c("id", "dam.1", "sire.1", "dam.2", "sire.2",
@@ -494,11 +507,10 @@ PedCompare <- function(Ped1 = NULL,
 
 Vcomp <- function(Infrd, Simld, SNPd)
 {
-  out <- c("total" = length(Simld),
-           "both" = length(intersect(Infrd, Simld)),
-           "err" = length(setdiff(Infrd[Infrd %in% SNPd], Simld)),
-           "missed" = length(setdiff(Simld, Infrd)))
-  out
+  c("total" = length(Simld),
+    "both"  = length(intersect(Infrd, Simld)),
+    "err"   = length(setdiff(Infrd[Infrd %in% SNPd], Simld)),
+    "missed"= length(setdiff(Simld, Infrd)))
 }
 
 

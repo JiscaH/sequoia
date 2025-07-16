@@ -18,9 +18,7 @@ GetMaybeRel(
   Tassign = 0.5,
   Tfilter = -2,
   MaxPairs = 7 * nrow(GenoM),
-  quiet = FALSE,
-  ParSib = NULL,
-  MaxMismatch = NA
+  quiet = FALSE
 )
 }
 \arguments{
@@ -109,13 +107,6 @@ non-assignment, but will increase computational time.}
 \item{MaxPairs}{the maximum number of putative pairs to return.}
 
 \item{quiet}{logical, suppress messages.}
-
-\item{ParSib}{\strong{DEPRECATED, use \code{Module}} either 'par' to check
-for putative parent-offspring pairs only, or 'sib' to check for all types
-of first and second degree relatives.}
-
-\item{MaxMismatch}{\strong{DEPRECATED AND IGNORED}. Now calculated
-automatically using \code{\link{CalcMaxMismatch}}.}
 }
 \value{
 A list with

@@ -2,7 +2,8 @@
 #' @title Fix Pedigree
 #'
 #' @description Ensure all parents & all genotyped individuals are included,
-#'   remove duplicates, rename columns, and replace 0 by NA or v.v..
+#'   remove duplicates, rename columns, and replace 0 by NA or v.v.. Does not
+#'   sort parents before offspring.
 #'
 #' @param Pedigree  dataframe where the first 3 columns are id, dam, sire.
 #' @param gID  character vector with ids of genotyped individuals
@@ -39,6 +40,10 @@
 #' swapped by this function if necessary.
 #'
 #' @examples
+#' PedZ <- Ped_HSg5[41:50, ]
+#' PedPolish(PedZ)
+#' PedPolish(PedZ, gID = rownames(SimGeno_example)[30:40], DropNonSNPd=TRUE)
+#'
 #' \dontrun{
 #' # To get the output pedigree into kinship2 compatible format:
 #' PedP <- sequoia::PedPolish(SeqOUT$Pedigree, DropNonSNPd=FALSE,
@@ -76,7 +81,7 @@ PedPolish <- function(Pedigree,
   }
   if (NAToZero)  ZeroToNA <- FALSE
   #   if (ZeroToNA & NAToZero)  stop("ZeroToNA and NAToZero can't both be TRUE")
-  if (!class(Pedigree) %in% c("data.frame", "matrix"))
+  if (!inherits(Pedigree, c("data.frame", "matrix")))
     stop(PedName, " should be a dataframe or matrix", call. = FALSE)
   if (ncol(Pedigree) < 3)
     stop(PedName, " should be a dataframe with at least 3 columns (id - dam - sire)",
@@ -111,6 +116,10 @@ PedPolish <- function(Pedigree,
   } else {
     Ped <- Ped[, ColNums]
   }
+
+  if (length(unique(Ped[,1])) < nrow(Ped))
+    stop(PedName, " contains duplicated IDs with different parents", call. = FALSE)
+
 
   if (!is.null(gID)) {
     n.shared.ids <- length(intersect(Ped[,1], as.character(gID)))

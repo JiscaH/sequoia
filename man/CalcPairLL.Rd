@@ -11,8 +11,10 @@ CalcPairLL(
   LifeHistData = NULL,
   AgePrior = TRUE,
   SeqList = NULL,
+  Module = "ped",
   Complex = "full",
   Herm = "no",
+  InclDup = FALSE,
   Err = 1e-04,
   ErrFlavour = "version2.9",
   Tassign = 0.5,
@@ -33,7 +35,7 @@ CalcPairLL(
   (i.e. positive if ID2 is born before ID1). If \code{NA}, calculated from
   \code{LifeHistData}. Use '999' to explicitly specify 'unknown'.}
 \item{focal}{relationship character abbreviation; PO, FS, HS, GP or U. See
-Details for its effect and explanation of abbreviations. Default: U}
+Details for its effect and explanation of abbreviations. Default: U.}
 \item{patmat}{1=maternal relatives, 2=paternal relatives. Only relevant for
   HS & GP, for which it defaults to Sex1, or 1 if Sex1=3, but is currently
   only predictably implemented for pairs of two genotyped individuals.
@@ -92,6 +94,10 @@ is present, input parameters with the same name as its items are ignored.
 The list elements 'LifeHist', 'AgePriors', and 'ErrM' are also used if
 present, and override the corresponding input parameters.}
 
+\item{Module}{if \code{ped} (full pedigree), turn any non-genotyped parents
+in \code{Pedigree} into dummies to condition upon. If \code{par}, ignore
+any non-genotyped parents.}
+
 \item{Complex}{Breeding system complexity. Either "full" (default), "simp"
 (simplified, no explicit consideration of inbred relationships), "mono"
 (monogamous).}
@@ -100,6 +106,9 @@ present, and override the corresponding input parameters.}
 sire role, default if at least 1 individual with sex=4), or "B" (no
 distinction between dam and sire role). Both of the latter deal with
 selfing.}
+
+\item{InclDup}{logical, include the likelihood for the two samples to be
+duplicates (originating from the same individual) in the output?}
 
 \item{Err}{estimated genotyping error rate, as a single number, or a length 3
 vector with P(hom|hom), P(het|hom), P(hom|het), or a 3x3 matrix. See
@@ -157,10 +166,11 @@ The \code{Pairs} dataframe including all optional columns listed
   \item{333}{Excluded from comparison (shouldn't occur)}
   \item{444}{Not implemented (e.g. would create an odd double/triple
     relationship in combination with the provided pedigree)}
-  \item{777}{Impossible (e.g. cannot be both full sibling and grandparent)}
+  \item{777}{Impossible (e.g. a male (Sex2=2) cannot be mother (patmat=1))}
   \item{888}{Already assigned in the provided pedigree (see \code{dropPar}
     arguments)}
-  \item{999}{NA}
+  \item{999}{\code{NA}. If all values for the pair are \code{999}, one or both
+    individuals are not genotyped and not dummyfiable.}
 }
 \description{
 For each specified pair of individuals, calculate the
@@ -188,6 +198,18 @@ The same pair may be included multiple times, e.g. with different
   \strong{Warning 2}: Conditioning on a \code{Pedigree} can make computation
   orders of magnitude slower.
 }
+\section{Why does it say 444 (no can do) for all relationships?}{
+
+ This happens when the pair does not pass the initial check which prevents
+ impossible configurations in combination with \code{Pedigree}. Specifically,
+ it happens when either or both individuals are a parent in the pedigree, but
+ \itemize{
+   \item the sex in \code{Pairs} is not consistent with that
+   \item \code{Pairs} changes the age differences; it is too complex to check
+   whether or not this still makes all pedigree links valid. Only setting the
+   age difference to 'unknown' via \code{Pairs} is possible.}
+}
+
 \section{Why does it say 777 (impossible)?}{
 
   This function uses the same machinery as \code{sequoia}, which will to save
@@ -201,21 +223,12 @@ The same pair may be included multiple times, e.g. with different
     to 1 (maternal relatives, i.e. dam)
   \item a dam is already assigned via \code{Pedigree} and \code{Pairs$dropPar1
     ='none'}, and \code{Pairs$patmat = 1}
-  \item \code{Pairs$focal} is not 'U' (the default), and the OH count between the
-    two individuals exceeds MaxMismatchOH. This value can be found in
-    \code{SeqList$Specs}), and is calculated by \code{\link{CalcMaxMismatch}}
-  \item the age difference, either calculated from \code{LifeHistData} or
-    specified via \code{Pairs$AgeDif}, is impossible for a parent-offspring
-    pair according to the age prior. The latter can be specified via
-    \code{AgePrior}, or is taken from \code{SeqList}, or is calculated when
-    both \code{Pedigree} and \code{LifeHistData} are provided.
-    }
-
- For FS (putative full siblings) this happens when e.g. ID1 has a dam
- assigned which is not dropped (\code{Pairs$dropPar1='none'} or
- \code{'sire'}), and the OH count between ID1's dam and ID2 exceeds
- MaxMismatchOH. The easiest way to 'fix' this is by increasing the presumed
- genotyping error rate.
+  \item the age difference is zero or otherwise impossible according to the
+    age prior. It is either calculated from \code{LifeHistData} or specified
+    via \code{Pairs$AgeDif}. The \code{AgePrior} can be specified directly,
+    be taken from \code{SeqList}, or calculated  automatically by
+    \code{\link{MakeAgePrior}} when both \code{Pedigree} and
+    \code{LifeHistData} are provided. }
 }
 
 \section{Double relationships & focal relationship}{
@@ -237,9 +250,29 @@ The same pair may be included multiple times, e.g. with different
   alternative relationship would result in a deadlock.
 }
 
+\section{Dummy individuals}{
+
+  For historical reasons, the relationships between a dummy ID1 and ID2 are
+  reported *between the sibship and ID2*. So,
+  \describe{
+ \item{PO}{ID2 replaces dummy ID1; or merge dummy ID2 with dummy ID1}
+ \item{FS, HS}{ID1 parent of ID2}
+ \item{GP}{ID2 parent of ID1}
+ \item{FA,HA}{ID2 FS resp. HS of ID1} }
+ If ID1 is genotyped and ID2 is a dummy, the relationships are as when ID2 is
+ genotyped.
+
+ If you wish to retrieve likelihoods for a different set of relationships,
+ please contact me at \email{jisca.huisman@gmail.com} .
+}
+
 \examples{
-CalcPairLL(Pairs = data.frame(ID1='i116_2006_M', ID2='i119_2006_M'),
-           GenoM = Geno_griffin, Err = 1e-04, Plot=FALSE)
+# Likelihoods depend on the presumed genotyping error rate:
+CalcPairLL(Pairs = data.frame(ID1='i042_2003_F', ID2='i015_2001_F'),
+           GenoM = Geno_griffin, Err = 1e-7, Plot=FALSE)
+CalcPairLL(Pairs = data.frame(ID1='i042_2003_F', ID2='i015_2001_F'),
+           GenoM = Geno_griffin, Err = 1e-3, Plot=FALSE)
+
 
 ## likelihoods underlying parent LLR in pedigree:
 # Example: dams for bottom 3 individuals
@@ -276,15 +309,16 @@ PairLL <- CalcPairLL(Pairs = rbind( cbind(FivePairs, focal = "PO"),
                                     cbind(FivePairs, focal = "GP")),
                      GenoM = Geno_griffin, Plot=FALSE)
 PairLL[PairLL$ID1=="i121_2007_M", ]
-# LL(FS)==222 : HSHA, HSGP, FAHA more likely than FS
+# LL(FS)==222 : HSHA, HSGP, and/or FAHA more likely than FS
 # LL(GP) higher when focal=HS: GP via 'other' parent also considered
 # LL(FA) higher when focal=PO: FAHA, or FS of 'other' parent
 
 }
 \seealso{
 \code{\link{PlotPairLL}} to plot alternative relationship pairs from
-  the output; \code{\link{CalcOHLLR}} to calculate LLR for parents &
-  parent-pairs in a pedigree; \code{\link{GetRelM}} to find all pairwise
-  relatives according to the pedigree; \code{\link{GetMaybeRel}} to get
-  likely relative pairs not in the pedigree.
+  the output; \code{\link{LLtoProb}} to transform likelihoods to
+  probabilities; \code{\link{CalcParentProbs}} which uses this function to
+  calculate parental probabilities; \code{\link{GetRelM}} to find all
+  pairwise relatives according to the pedigree; \code{\link{GetMaybeRel}} to
+  get likely relative pairs based on the genetic data.
 }

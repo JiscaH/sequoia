@@ -19,14 +19,11 @@ sequoia(
   UseAge = "yes",
   args.AP = list(Flatten = NULL, Smooth = TRUE),
   mtSame = NULL,
-  CalcLLR = TRUE,
+  CalcLLR = FALSE,
   quiet = FALSE,
   Plot = NULL,
   StrictGenoCheck = TRUE,
-  ErrFlavour = "version2.9",
-  MaxSibIter = 42,
-  MaxMismatch = NA,
-  FindMaybeRel = FALSE
+  ErrFlavour = "version2.9"
 )
 }
 \arguments{
@@ -58,8 +55,7 @@ current run. Used are elements `PedigreePar', `LifeHist', `AgePriors',
 `Specs', and `ErrM', and these override the corresponding input parameters.
 Not all of these elements need to be present, and all other elements are
 ignored. If \code{SeqList$Specs} is provided, all  input parameters with
-the same name as its items are ignored, except
-\code{Module}/\code{MaxSibIter}.}
+the same name as its items are ignored, except \code{Module}.}
 
 \item{Module}{one of
 \describe{
@@ -70,10 +66,7 @@ the same name as its items are ignored, except
   \item{ped}{(Also) perform full pedigree reconstruction, including
     sibship clustering and grandparent assignment. By far the most time
     consuming, and may take several hours for large datasets.}
-}
-NOTE: \emph{Until `MaxSibIter` is fully deprecated: if `MaxSibIter` differs
-from the default (\code{42}), and `Module` equals the default
-(\code{'ped'}), MaxSibIter overrides `Module`.}}
+}}
 
 \item{Err}{estimated genotyping error rate, as a single number, or a length 3
 vector with P(hom|hom), P(het|hom), P(hom|het), or a 3x3 matrix. See
@@ -147,18 +140,6 @@ and returns a length 3 vector or 3x3 matrix, or choose from inbuilt options
 'version2.9', 'version2.0', 'version1.3', or 'version1.1', referring to the
 sequoia version in which they were the default. Ignored if \code{Err} is a
 vector or matrix. See \code{\link{ErrToM}} for details.}
-
-\item{MaxSibIter}{\strong{DEPRECATED, use \code{Module}} number of iterations
-of sibship clustering, including assignment of grandparents to sibships and
-avuncular relationships between sibships. Clustering continues until
-convergence or until MaxSibIter is reached. Set to 0 for parentage
-assignment only.}
-
-\item{MaxMismatch}{\strong{DEPRECATED AND IGNORED}. Now calculated
-automatically using \code{\link{CalcMaxMismatch}}.}
-
-\item{FindMaybeRel}{\strong{DEPRECATED AND IGNORED}, advised to run
-\code{\link{GetMaybeRel}} separately.}
 }
 \value{
 A list with some or all of the following components, depending on
@@ -298,9 +279,14 @@ Alternatively, a true parent will not be assigned when it is:
    data
  }
  All pairs of non-assigned but likely/definitely relatives can be found with
- \code{\link{GetMaybeRel}}. For a method to do pairwise 'assignments', see
+ \code{\link{GetMaybeRel}} (run without conditioning on a pedigree). For a
+ method to do pairwise 'assignments', see
  https://jiscah.github.io/articles/pairLL_classification.html ; for further
  information, see the vignette.
+
+ If you already had a partial pedigree, running \code{\link{CalcOHLLR}} or
+ \code{\link{CalcParentProbs}} on it with the new SNP data and various
+ parameter value combinations may be informative.
 }
 
 \section{Disclaimer}{
@@ -396,6 +382,8 @@ Huisman, J. (2017) Pedigree reconstruction from SNP data:
   \item \code{\link{GetRelM}} to turn a pedigree into pairwise relationships,
   \item \code{\link{CalcOHLLR}} to calculate Mendelian errors and LLR for any
    pedigree,
+  \item \code{\link{CalcParentProbs}} to calculate assignment probabilities
+  instead of LLRs,
   \item \code{\link{CalcPairLL}} for likelihoods of various relationships
    between specific pairs,
   \item \code{\link{CalcBYprobs}} to estimate birth years,
