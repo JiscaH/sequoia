@@ -606,8 +606,7 @@ find_bestrel <- function(LL, tiny=0.01)
         r2 <- 4:6
       }
     }
-    if (!all(is.na(LL[r2])) && abs(max(LL[r2],na.rm=TRUE) - mxLL) < tiny &
-        max(LL[r2],na.rm=TRUE) - min(LL[r2],na.rm=TRUE) < tiny) {
+    if (sum(!is.na(LL[r2]))>1 && abs(max(LL[r2],na.rm=TRUE) - mxLL) < tiny) {
       return(data.frame(TopRel = '2nd',  # some kind of second degree relative
                   LLR = max(LL[r2],na.rm=TRUE) - max(LL[-r2],na.rm=TRUE)))  # NOTE!
     } else {

@@ -268,11 +268,11 @@ CalcParentProbs <- function(Pedigree = NULL, GenoM = NULL, quiet = FALSE, nCores
 #' @description transform a vector with log10 likelihoods to a vector with
 #'  probabilities summing to one.
 #'
-#' @details Computational under/overflow issues are
-#'  reduced by subtracted the half of the minimum value before converting from log to
-#'  regular scale. Probabilities that would still be smaller than the machine
-#'  precision (\code{(LL - min(LL)/2) < log10(.Machine$double.xmin)}) are set to
-#'  0, instead of \code{-Inf}, to avoid issues when scaling to sum to 1.
+#' @details Computational under/overflow issues are reduced by subtracted the
+#'   maximum value before converting from log to regular scale. Probabilities
+#'   that would still be smaller than the machine precision (\code{(LL -
+#'   min(LL)/2) < log10(.Machine$double.xmin)}) are set to NA en then to 0,
+#'   instead of \code{-Inf}, to avoid issues when scaling to sum to 1.
 #'
 #' @param LLv a vector with log10-likelihoods. All values >0 are set to NA.
 #'
@@ -287,12 +287,12 @@ LLtoProb <- function(LLv)   # vector with likelihoods
   # all LL's are equal in case of dummy parent with no GPs or further genotyped offspring
   # set to NA: no information.
   if (suppressWarnings(max(LLv, na.rm=TRUE) - min(LLv, na.rm=TRUE)) < 0.01) LLv[] <- NA
-  # subtract half the minimum LL from all
+  # subtract the maximum LL from all
   # (i.e. divide on non-logscale, which does not change the ratios)
-  LLv <- LLv - suppressWarnings(min(LLv, na.rm=TRUE))/2
+  LLv <- LLv - suppressWarnings(max(LLv, na.rm=TRUE))
   # check if can be converted to non-log without under/overflow issues
-  min_dLL <- suppressWarnings(min(LLv, na.rm=TRUE))
   machine_min <- log10(.Machine$double.xmin)
+  min_dLL <- suppressWarnings(min(LLv, na.rm=TRUE))
   toolow <- NULL
   if (min_dLL < machine_min) {
     # set the smallest values to have a probability of 0 (rather than -Inf)

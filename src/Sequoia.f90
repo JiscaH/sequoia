@@ -5045,33 +5045,6 @@ if (fclsib .and. ANY(LLg(2:3)<0d0) .and. (MaxLL(LLg(2:3)) - MaxLL(LLg((/1,4,5,6,
   endif
 endif  
 
-! if (A==130 .and. B==50) then
-  ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-    ! write (42, *) ""
-    ! write (42, '("pair?", 2i6, "; parents: ", 2i6, ", ", 2i6)') A, B, Parent(A,:), Parent(B,:)   
-    ! write (42, '("LLG ", 7f9.2, "  ", 2i3)') LLg, k, focal
-    ! !write (42, '("LL  ", 7f9.2)') LL
-    ! !write (42, '("ALR ", 7f9.2, "  ", i3)') ALR
-    ! write (42, '("LLHH ", 2f9.2, "; ", 2f9.2)')  LLHH(:,1), LLHH(:,2)
-    ! write (42, '("LLX ", 5f8.1)') LLX
-    ! write (42, '("LLZ ", 10f8.1)') LLZ
-    ! write (42, '("LL PO-HA ", 3f8.1, "  FAx: ", 2f8.1)') LLPA, LLFAx
-    ! write (42, '("LLUA ", 3f8.1, "; ", 3f8.1, "; ", 5f8.1)') LLtmpAU(1,:), LLtmpAU(2,:), LLCC
-    ! !write (42, '("ALR-AU ", 3f8.1, "; ", 3f8.1)') ALRAU(1,:), ALRAU(2,:)
-    ! write (42, '("LLGGP ", 6f8.1)') LLGGP 
-    ! write (42, '("LL sib ", f8.1, ",", f8.1)') LLS, ALRs
-    ! write (42, '("LLGR ", 3f8.1, "; ", 3f8.1)') LLGR, ALRgr
-    ! write (42, '("LLC ", 7f8.1, ", LLFC: ", f8.1)') LLC(:,1), LLFC
-    ! write (42, '("LLFA ", 2f8.1, "; ", 2f8.1)') LLFA, ALRf
-    ! write (42, '("LLP ", 4f8.1, ", ", 4f8.1)') LLP(1,:), LLP(2,:), ALRp(1,:), ALRP(2,:) ! LLPS(1,:), LLPS(2,:)
-    ! write (42, '("LU ", f8.1, "; ", 3f8.1)') LLg(7), Lind(A) + Lind(B), Lind(A), Lind(B) 
-    ! !write (42, *) "MateB: ", Mate(B),  "  Mate-28: ", Mate(28) 
-    ! write (42, *) "" 
-    
-  ! close(42) 
-! endif
-
-
 end subroutine CheckPair
 
 ! #####################################################################
@@ -5330,16 +5303,6 @@ enddo
 
 LL = MaxLL(LLtmp)
 
-
-! if (A==118 .and. B==91) then
-  ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-  ! write (42, '("PairPO : ", 3i6, " + ", i3, 3i6, 5l3, 5f8.1, i3, i6)')  A, Parent(A,:), &
-    ! k, B, Parent(B,:), Maybe, LLtmp, focal, PAB
-! !  write(42, '("LLX: ", 5f8.1)') LLX
-    ! close(42)
-! endif
-
-
 end subroutine PairPO
 
 ! #####################################################################
@@ -5529,15 +5492,6 @@ if ((Par(1) < 0 .or. Par(2)<0) .and. (AlreadyHS==0 .or. (Par(1)/=0 .and. Par(2)/
             else
               LL = dx(i)
             endif 
-            
-            ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",&
-             ! status="unknown", position="append")
-            ! write (42, *) ""
-            ! write (42, *) "PairFS-1: ", A, B, Par, ", ", AlreadyHS, LL, x, i
-            ! write (42, '(20f8.1)') LUX, LLtmp, dx(i)
-            ! write (42, *) ""    
-            ! close(42)
-            
             return
           endif
         enddo
@@ -5598,14 +5552,6 @@ else
   enddo
   LL = SUM(PrL) 
 endif
-
-! if (A==51 .and. B==53) then
-  ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-  ! write (42, *) ""
-  ! write (42, *) "PairFS-2: ", A, B, Par, ", ", AlreadyHS, LL
-  ! write (42, *) ""    
-  ! close(42)
-! endif
 
 end subroutine PairFullSib
 
@@ -5779,12 +5725,7 @@ if (Parent(A,3-k)<0 .or. (PAB < 0 .and. Parent(B,3-k)<0)) then  ! TODO: .or.
   if (withFS(2) .and. Parent(B,3-k)<0)  Bj = Parent(B,3-k)  
   call pairUA(Bj,Ai,3-k,3-k,LL)
   call setParTmp(A,sex(A), ParA(k),k)
-  call setParTmp(B,sex(B), ParB(k),k)
-  
-  ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-   ! write (42, *) ""
-   ! write(42,'("pairHSHA_: ", 4i5, f9.2, 2l3, 2i6)') A, B, k, PAB, LL, withFS, Ai, Bj
-   ! close(42)   
+  call setParTmp(B,sex(B), ParB(k),k)   
   
   return
 endif  
@@ -5854,32 +5795,7 @@ LLtmp = SUM(PrL,DIM=1)
 if (GA(k)/=0 .and. GA(k)/=PAB)   LLtmp(2) = Impossible
 LL = MaxLL(LLtmp)
 if (Parent(A,3-k)>0)  LL = LL - Lind(Parent(A,3-k))
-
-!LLX = 0.0D0
-! if (withFS) then                              
-  ! do i=1, nFS(Ai)
-    ! if (FSID(i,Ai) /= A) then
-      ! LLX = LLX + Lind(FSID(i,Ai))
-    ! endif
-  ! enddo
-  ! do j=1, nFS(Bj)
-    ! if (FSID(j,Bj) /= B) then
-      ! LLX = LLX + Lind(FSID(j,Bj))
-    ! endif
-  ! enddo
-  ! LL =  LL - LLX   ! consider change in FS's LL, but do not include their LL in output
-! endif
-
 if (LL < -HUGE(0D0))  LL = impossible
-
-
-!if (k==2) then
-   ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-   ! write (42, *) ""
-   ! write(42,'("pairHSHA: ", 5i5, 3f9.2, 2l3, 2i5)') A, B, k, PAB, GA(k), LLtmp, LL, withFS, Ai, Bj
-   ! close(42)
-!endif
-
 
 end subroutine pairHSHA
 
@@ -7305,15 +7221,6 @@ LL = MaxLL(LLtmp)
 if (LL >= 0) then
   LL = impossible
 endif
-
-! if (A==42 .and. (B==40 .or. B==41)) then
-  ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-  ! write (42, '("PairGP : ", 3i6, ", ", i3, 3i6, 8f8.1)')  A, Parent(A,:), k, B, Parent(B,:), LLtmp 
-  ! write (42, '(4f8.1, i3, f8.1)') LLU, Lind(B), Lind(A), focal,  LL  ! , CLL(-Parent(A,3-k), 3-k)
-  ! write (42, '("PrL: ", 8f8.1)')  SUM(PrL, DIM=1)
-! !  print *, 'sibs: ', SibID(1:3, -Parent(A,3-k), 3-k), '; GPs: ', GpID(:, -Parent(A,3-k), 3-k)
-! close(42)
-! endif
 
 end subroutine PairGP
 
@@ -10144,7 +10051,7 @@ do x=1, SUM(nC)
   if (MODULO(x,10)==0)  call rchkusr()
   s = s_sorted(x)
   k = k_sorted(x)
-
+  
   if (quiet==-1 .and. any(chunk_printdot==x)) call print_dot(count(chunk_printdot==x))   
   if (ALL(GpID(:,s,k)/=0) .and. (.not. IsNewSibship(s,k) .or. ns(s,k)==1)) cycle  
   if (skipCluster(s,k) .and. .not. (hermaphrodites==2 .and. k==1))  cycle
@@ -11823,52 +11730,6 @@ do x=1,4
   endif
 enddo
 
-
-! if (A==130 .and. any(SibID(:,SB,k)==103)) then
- ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-   ! write (42, *) ""
-    ! write (42, '("add?", 3i6, " + ", 2i6, " GPs: ", 2i6, " ns: ", i5)') & 
-      ! A, Parent(A,:), SB, k, GpID(:,SB,k), ns(SB,k)
-    ! write (42, '("LLG ", 7f9.2, "  ", i3)') LLg, focal
-    ! !write (42, '("LL  ", 7f9.2, " ", i4)') LL, DumClone(SB,k)
-    ! !write (42, '("ALR ", 7f9.2, "  ", i3)') ALR
-    ! write (42, '("LLAU ", 6f8.1)') LLAU(1,:), LLAU(2,:)  !, maybeFA  , ", maybeFA: ", l3
-    ! !write (42, '("ALRau ", 6f8.1)') ALRAU(1,:), ALRAU(2,:)
-    ! write (42, '("LLZ ", 7f8.1)') LLz
-    ! !write (42, '("ALRz: ", 7f8.1, ", ALRq: ", f8.1)')  ALRz, ALRq                                                                   
-    ! write (42, '("LLU ", f9.2, "; ", 3f9.2)') LLg(7), Lind(A) + CLL(SB,k), Lind(A), CLL(SB,k) 
-    ! write (42, '("LLM ", L2, 2i6, "; ", 3f8.1, ", LLPX: ", 4f8.1)') &
-     ! MaybeOpp, FSpar, fsi, LLM, LLPX(1,:), LLPX(2,:)
-    ! if (ANY(LLP<missing))  write (42, '("LLP ", 7f8.1)') LLp
-    ! write (42, '("LLHH: ", 2f8.1, " ; ", 2f8.1)')  LLHH(:,1), LLHH(:,2)
-    ! write (42, '("LLC: ", f8.1, ", LHH: ", 3f8.1, ", ", f8.1)') LLC, LHH, LHH2
-     ! if (FSpar<0) write(42,*)  "ns FSpar: ", ns(-FSpar,3-k)
-    ! ! write (42, '("LLPO-1: ", 50f8.1)') LLPO(:, 1) 
-    ! ! write (42, '("LLPO-2: ", 50f8.1)') LLPO(:, 2)
-    ! !write (42, '("LLHSPO-1: ", 50f8.1)') LLHSPO(:, 1) 
-    ! !write (42, '("LLHSPO-2: ", 50f8.1)') LLHSPO(:, 2)
-     ! ! write (42, '("LLGP-1: ", 50f8.1)') LLGP(:, 1) 
-     ! ! write (42, '("LLGP-2: ", 50f8.1)') LLGP(:, 2)
-     ! ! write (42, '("LLGP-3: ", 50f8.1)') LLGP(:, 3)
-    ! ! write (42, '("LLdGP : ", 50f8.1)') LLdGP(:)
-    ! ! write (42, '("LLFS  : ", 50f8.1)') LLFS
-    ! ! write (42, '("LLy: ", 4f8.1)')  LLy(1,:), LLy(2,:)
-    ! ! write (42, '("LLFH: ", 3f8.1)')  LLFH
-     ! do x=1, nS(SB, k)
-       ! write(42,'(i6, 2X, 2i6, 2X, f8.1, " fs", i4, ";", 10i6)') SibID(x,SB,k), &
-        ! Parent(SibID(x,SB,k),:), Lind(SibID(x,SB,k)), nFS(SibID(x,SB,k)), FSID(1:nFS(SibID(x,SB,k)), SibID(x,SB,k))
-     ! enddo
-  ! write (42, *) ""
-  
-  ! ! call addsib(A, -GpID(2,SB,k),2,LLz(1))
-  ! ! call CalcU(A,sex(A), GpID(2,SB,k),2, LLz(2))
-  ! ! call AddGrandsib(A, SB,k, LLz(3))
-  ! ! write(42, '("LL add to M3: ", 3f9.2, " ; ", f9.2)') LLz(1:2), LLz(1) - LLz(2), LLz(3)
-  
-  ! close(42)
-! endif
-
-
 end subroutine CheckAdd 
 
 ! #####################################################################
@@ -12361,48 +12222,6 @@ do x=1,4
     LLg(x) = LL(x)
   endif
 enddo
-
-
-! if (kB==2) then  !  .and. GpID(1,SA,kA)/=0
- ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-    ! write (42, *) ""
-    ! write(42,'("merge? ", 2i5," ,",2i5,": ", i3, l3, "  GA: ", 2i5," , GB: ", 2i5)') &
-      ! kA, SA, kB, SB, focal, FSM, GpID(:, SA, kA), GpID(:, SB, kB)      
-    ! ! write(42,'("SA 3-k:  ", 10i5)')   SibID(1:10, 1, 3-kA)
-    ! ! write(42,'("SB 3-k:  ", 10i5)')   SibID(1:10, 6, 3-kA)   
-    ! write(42,'("LLg: ", 7f8.1)') LLg
- ! !   write(42,'("LL:  ", 7f8.1)') LL
- ! !   write(42,'("ALR: ", 7f8.1)') ALR
-    ! write(42,'("LLtmp ", 3f8.1)') LLtmp
-    ! write (42,'("LLx ", 8f8.1)')  LLx
-  ! !  write (42,'("ALRx ", 6f8.1)')  ALRx
-   ! write(42,'("LLZ ", 4f8.1)') LLz(1,:), LLz(2,:)
-   ! write(42,'("LLY ", 6f8.1)') LLy(1,:), LLy(2,:)
-   ! write(42,'("LLM ", 2i5, 5f8.1, " ; ", 2f8.1, 4i3)') Par, LLM, LLM(2)-LL(7), LLM(3)-LLM(1), NSx(:,1), NSx(:,2)
-   ! write(42,'("LLMo, LLHHA ", 5f8.1, "; ", 2f8.1)') LLMo, LLHHA
-    ! write(42,'("LLU: ", 3f8.1)') CLL(SA,kA), CLL(SB,kB), CLL(SA,kA) + CLL(SB,kB)
-     ! do i=1, nS(SA, kA)
-     ! write(42,'(i3, " ", 3i6, f8.1, " fs", 10i5)') SA, SibID(i,SA,kA), Parent(SibID(i,SA,kA),:), &
-      ! Lind(SibID(i,SA,kA)), nFS(SibID(i,SA,kA)), FSID(1:nFS(SibID(i,SA,kA)), SibID(i,SA,kA))
-     ! enddo
-     ! write (42, *) ""
-    ! do i=1, nS(SB, kB)
-        ! write(42,'(i3, " ",3i6, f8.1, " fs", 10i5)') SB, SibID(i,SB,kB), Parent(SibID(i,SB,kB),:), &
-           ! Lind(SibID(i,SB,kB)), nFS(SibID(i,SB,kB)), FSID(1:nFS(SibID(i,SB,kB)), SibID(i,SB,kB))
-     ! enddo
-    ! write (42, *) ""
-    ! call setPar(-SA,kA, -SB, kB)
-    ! call CalcU(-SA,kA, -SB,kB, LLx(1))
-    ! call CalcU(SibID(1,SA,kA),kA, SibID(1,SB,kB), kB, LLx(2))
-    ! write(42,'("LLg-4: ", 2f8.1)') LLx(1:2)
-    ! call setPar(-SA,kA, 0, kB)
-    ! call CalcU(-SA,kA, -SB,kB, LLx(1))
-    ! call CalcU(SibID(1,SA,kA),kA, SibID(1,SB,kB), kB, LLx(2))
-    ! write(42,'("LLg-7: ", 2f8.1)') LLx(1:2)
-    
-    ! close(42)
-! endif
-
 
 end subroutine CheckMerge 
 
@@ -14102,14 +13921,6 @@ else
   LL = SUM(PrL)
 endif
 
-
-! if (A==8)  then
-  ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
- ! write (42, *) ""
-  ! write (42, '("addSib?", 3i6, ", ", l4, i4, f9.2)') A, SB, k, Inbr, DoQuick , LL
-  ! close(42)
-! endif
-
 end subroutine AddSib
 
 ! #####################################################################
@@ -15034,24 +14845,6 @@ else
   endif  
 endif
 
-! if (A==51 .and. any(SibID(:,SB,kB)==53)) then
-  ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt", position="append")
-  ! write (42, *) ""
-  ! write(42, '("Add FS", 2i5, "--", 3i5, "; ", 2i5, " - ", i4, 2f8.1, " ", 2i3)') & 
-     ! kB, SB, kA, A, SA, GpID(:,SB,kB), PA, LLUX, LL, InbrX, DoQuick
-  ! if (A>0)  write(42, '("nFS A: ", 2i5, ", LLtmp: ", 2f8.1)') nFS(A), FSID(maxSibSize+1, A), LLtmp
-    ! do f=1, nS(SB,kB)
-      ! Bj = SibID(f, SB, kB)
-        ! write(42,'(4i6, 3f8.1, 2i3, i6)') Bj, Parent(Bj, 3-kB), &
-          ! Par(f), MaybeFS(f), dLL(f), SUM(PrL(:, f, 1)), SUM(PrL(:, f, 2)), Inbr(f), &
-          ! nFS(Bj), FSID(maxSibSize+1, Bj)
-    ! enddo
-    ! write (42, *) "TopSib: ", TopSib!, dLLOUT
-  ! write (42, *) ""
-  ! close(42)
-! endif
-
-
 end subroutine AddFS
 
 ! #####################################################################
@@ -15227,14 +15020,6 @@ LL = SUM(PrL)
 if (LL < -HUGE(0D0))  LL = impossible
 !if (Inbr==0 .and. DoQuick>0)  LL = LL + Lind(A)
 
-  ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-  ! write (42, *) ""
-  ! write (42, *) "AddParent: ", A, SB, ' GB: ', GB, '  GG: ', GG, '  PA: ', Parent(A,:)
-  ! write (42, *) "Inbr: ", Inbr, '  DoQuick: ', DoQuick
-  ! write (42, *) ""    
-  ! close(42)
-
-
 end subroutine AddParent
 
 ! #####################################################################
@@ -15294,18 +15079,13 @@ else
       else if (any(GpID(:, -pari, 3-k) == A)) then  ! double GP
         cat = 5
         exit
-      else if (any(GpID(:, -pari, 3-k) == curGP)) then
+      else if (any(GpID(:, -pari, 3-k) == curGP .and. curGP/=0)) then
         cat = 6       
         exit
       endif
     endif     
   enddo
-endif    
-
-if (Complx < 2 .and. (cat/=0 .or. catG/=0)) then
-  LL = NotImplemented
-  return
-endif
+endif 
 
 call ChkDoQuick(SB,k,DoQuick)    
 
@@ -15480,15 +15260,7 @@ else
   enddo
   
   LL = SUM(PrL) + Lind(A)
-endif
-  
-  ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-   ! write (42, *) ""
-  ! write(42,'("AddGP: ", 3i6, " + ", 4i6, "; cats: ", 3i4, f9.2)') &
-    ! A, Parent(A,:), k, SB, GpID(:,SB,k), cat, catG, DoQuick, LL
-   ! write(42, '("LLtmp: ", 3f9.2, " curGP: ", 2i6)')  LLU, LLtmp, curGP 
-! write (42, *) ""  
-  ! close(42)  
+endif  
   
 end subroutine AddGP
 
@@ -15677,21 +15449,6 @@ do l=1,nSnp
   PrL(l) = LOG10(SUM(PrXYZ(:,:,:,2))) - LOG10(SUM(PrXYZ(:,:,:,1)))          
 enddo
 LL = SUM(PrL) + Lind(A)
-
-
-! if (A==59)  then
- ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-   ! write (42, *) ""
-  ! write(42,*) "AddGGP: ", A, Parent(A,:), " + ", SB, k, "; cats:", catG, DoQuick, GG
-  ! write (42, '("LL: ", 2f9.2, "; ", 2f9.2)') SUM(PrL), LL, Lind(A)!, Lind(GG)
-  ! write(42,*) 'SB: '
-  ! do i=1,nS(SB,k)
-    ! write(42,*) SibID(i,SB,k), Parent(SibID(i,SB,k), 3-k), getPar(Parent(SibID(i,SB,k), 3-k), 3-k)
-  ! enddo
-  ! write (42, *) ""
-  ! close(42)
-! endif
-
 
 end subroutine AddGGP
 
@@ -16258,19 +16015,6 @@ do l=1,nSnp
 enddo
 
 LL = SUM(PrL)
-
-
-  ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-  ! write (42,*) ""
-  ! write (42,'("ParentHFS: ", 6i4, 2i3, f9.2)') A, SA, kA, SB, kB, hf, DoQuickA, DoQuickB, LL
-  ! write (42,*) "G: ", G, ", catG: ", catG, "; ", GA, GB
-  ! write (42,*) "catA: ", catA(1:nA) , ", nFS: ", nFS(AA(1:nA))
-  ! write (42,*) "catB: ", catB
-  ! write (42,*) "doneA: ", doneA(1:nA)
-! !  print *, "nFS A1: ", nFS(AA(1))
-  ! write (42,*) 'Parent A 3-kA: ', Parent(AA(1:nA), 3-kA)
- ! close(42)
-  
   
 end subroutine ParentHFS
 
@@ -16618,20 +16362,6 @@ do m=1,2
   LLGX(m,2) = SUM(PrL)
 enddo
 LL = MaxLL((/LLGX(:,1), LLGX(:,2)/))
-
-
-! if (kB==2) then
- ! open (unit=42,file="D:/Sequoia/Bugs & queries/2025-05_calcpair_parentprobs/Rlog.txt",status="unknown", position="append")
-  ! write(42,*) ''
-  ! write(42,'("DummyGP: ", 4i6, 4f8.1, 2i6)') SA, kA, SB, kB, LLGX(:,1), LLGX(:,2), GGP
-  ! write(42,*)  "cats: ", catA, catB, catG, DoQuickA, DoQuickB  
-  ! write(42,'("LLtmp-1: ", 20f8.1)')  LLtmp(1:ns(SB,kB),1)
-  ! write(42,'("LLtmp-2: ", 20f8.1)')  LLtmp(1:ns(SB,kB),2)
-  ! write(42,'("LLZ: ", 2f8.1, "; ", 2f8.1)')  LLZ(:,1), LLZ(:,2)
- ! ! write(42,*) 'mates: ', parent(SibID(1,SA,kA), 3-kA) , ' & ', parent(SibID(1,SB,kB), 3-kB)
-  ! write(42,*) ''
-  ! close(42)
-! endif
 
 end subroutine DummyGP
 
@@ -17483,8 +17213,8 @@ else
   enddo
   if (COUNT(maybe)==1) then
     X = MAXLOC(LL(1:6), MASK=Maybe, DIM=1)
-  else if (ABS(MaxLL(LL(3:5))-MaxLL(LL))<small .and. COUNT(LL(3:5)<0d0) >1 .and. &
-    MAXVAL(LL(3:5), MASK=LL(3:5)<0d0,DIM=1) - MINVAL(LL(3:5), MASK=LL(3:5)<0d0,DIM=1) < small) then
+  else if (ABS(MaxLL(LL(3:5))-MaxLL(LL))<small .and. COUNT(LL(3:5)<0d0) >1) then
+  !  MAXVAL(LL(3:5), MASK=LL(3:5)<0d0,DIM=1) - MINVAL(LL(3:5), MASK=LL(3:5)<0d0,DIM=1) < small) then
     X = 9  ! any 2nd degree relative
   else
     X = 8  ! unclear
