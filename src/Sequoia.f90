@@ -1583,17 +1583,17 @@ end subroutine CheckMono
 
 ! ####################################################################
 
-subroutine duplicates(ng, specsint, specsdbl, errv, genofr, &  ! in
+subroutine duplicates(ng, specsint, specsdbl, errv, dupratio, genofr, &  ! in
   sexrf, byrf, aprf, & ! fake, empty in
   ndupgenos, dupgenos, nmismatch, snpdboth, duplr)  ! OUT
 use Global
 implicit none
 
-integer, intent(IN) :: ng, specsint(9)
+integer, intent(IN) :: ng, specsint(9), dupratio
 double precision, intent(IN) :: specsdbl(2), errv(9), aprf(5*specsint(8))
 integer, intent(IN) :: genofr(ng*specsint(1)), sexrf(ng), byrf(3*ng) 
-integer, intent(INOUT) :: ndupgenos, dupgenos(2*ng), nmismatch(ng), snpdboth(ng)
-double precision, intent(INOUT) :: duplr(ng)
+integer, intent(INOUT) :: ndupgenos, dupgenos(2*dupratio*ng), nmismatch(dupratio*ng), snpdboth(dupratio*ng)
+double precision, intent(INOUT) :: duplr(dupratio*ng)
 integer :: i, j, l, CountMismatch, MaxMisMatchDup, &
    parentsRF(2*Ng), DumParRF(2*Ng), LYRF(Ng)  ! fake & empty
 integer :: IsBothScored(-1:2,-1:2), IsDifferent(-1:2,-1:2), SnpdBoth_ij, i_quadraginta(40)
@@ -1654,13 +1654,13 @@ do i=1,nInd-1
       SnpdBoth(nDupGenos) = SnpdBoth_ij
       DupLR(nDupGenos) = LLtmp(1) - LLtmp(2)
     endif
-    if (nDupGenos==nInd) then
+    if (nDupGenos==dupratio*ng) then
       if(quiet<1) call rwarn("reached max for duplicates") 
       exit
     endif
-    if (nDupGenos==nInd) exit
+    if (nDupGenos==dupratio*ng) exit
   enddo
-  if (nDupGenos==nInd) exit
+  if (nDupGenos==dupratio*ng) exit
 enddo
 
 if (quiet==-1)  call rprint_eol()

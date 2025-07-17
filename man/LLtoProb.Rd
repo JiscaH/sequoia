@@ -17,9 +17,9 @@ transform a vector with log10 likelihoods to a vector with
  probabilities summing to one.
 }
 \details{
-Computational under/overflow issues are
- reduced by subtracted the half of the minimum value before converting from log to
- regular scale. Probabilities that would still be smaller than the machine
- precision (\code{(LL - min(LL)/2) < log10(.Machine$double.xmin)}) are set to
- 0, instead of \code{-Inf}, to avoid issues when scaling to sum to 1.
+Computational under/overflow issues are reduced by subtracted the
+  maximum value before converting from log to regular scale. Probabilities
+  that would still be smaller than the machine precision (\code{(LL -
+  min(LL)/2) < log10(.Machine$double.xmin)}) are set to NA en then to 0,
+  instead of \code{-Inf}, to avoid issues when scaling to sum to 1.
 }
