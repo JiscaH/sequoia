@@ -86,8 +86,8 @@ DuplicateCheck <- function(GenoM = NULL,
 
   # print warnings
   if (!quiet) {
-    if (any(duplicated(gID))) cli::cli_alert_danger(c("duplicate IDs found in `GenoM`, ",
-                                                       "please remove to avoid confusion"))
+    if (any(duplicated(gID))) cli::cli_alert_danger(cli::col_red(c("duplicate IDs found in `GenoM`, ",
+                                                       "please remove to avoid confusion")))
     if (DUP$ndupgenos>0 && DUP$ndupgenos > sum(duplicated(gID))) {
       cli::cli_alert_info(c('Found {ifelse(DUP$ndupgenos == Ng, ">=", "")}',
               "{DUP$ndupgenos} likely duplicate genotypes,",

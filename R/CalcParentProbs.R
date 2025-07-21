@@ -11,10 +11,10 @@
 #'   all possible relationships. For \code{Complex='simp'} these are
 #'   PO=parent-offspring, FS=full siblings, HS=half siblings, GP=grand-parental,
 #'   FA=full avuncular, HA=third degree relatives (incl half avuncular), and
-#'   U=unrelated. For \code{Complex='full'} there are numerous double relationship
-#'   considered (PO & HS, HS & HA, etc), making both numerator and denominator
-#'   in the scaling step less unambiguous, and the returned probabilities an
-#'   approximation.
+#'   U=unrelated. For \code{Complex='full'} there are numerous double
+#'   relationship considered (PO & HS, HS & HA, etc), making both numerator and
+#'   denominator in the scaling step less unambiguous, and the returned
+#'   probabilities an approximation.
 #'
 #'  The likelihoods are calculated by calling \code{\link{CalcPairLL}} once or
 #'  twice for each id-dam and id-sire pair: once not conditioning on the
@@ -55,8 +55,8 @@
 #'
 #' @return the \code{Pedigree} dataframe with the three applicable columns
 #' renamed to id-dam-sire, and 7 additional columns:
-#' \item{Probdam}{Probability that individual in dam column is the maternal parent,
-#'   rather than otherwise related (LL(PO)/sum(LL))}
+#' \item{Probdam}{Probability that individual in dam column is the maternal
+#'   parent, rather than otherwise related (LL(PO)/sum(LL))}
 #' \item{Probsire}{Analogous for sire}
 #' \item{Probpair}{Probability for id-dam-sire trio. Approximated as the minimum
 #'   of dam conditional on sire and sire conditional on dam, thus not including
@@ -71,7 +71,6 @@
 #' @seealso  \code{\link{CalcPairLL}}, \code{\link{LLtoProb}}
 #'
 #' @examples
-#'
 #' test_ped <- Ped_griffin[21:25,]
 #' # add an incorrect sire to illustrate
 #' test_ped$sire <- as.character(test_ped$sire)
@@ -268,7 +267,17 @@ CalcParentProbs <- function(Pedigree = NULL, GenoM = NULL, quiet = FALSE, nCores
 #' @description transform a vector with log10 likelihoods to a vector with
 #'  probabilities summing to one.
 #'
-#' @details Computational under/overflow issues are reduced by subtracted the
+#'  @details The returned probabilities are calculated from the likelihoods used
+#'   throughout the rest of this package, by scaling them to sum to one across
+#'   all possible relationships. For \code{Complex='simp'} these are
+#'   PO=parent-offspring, FS=full siblings, HS=half siblings, GP=grand-parental,
+#'   FA=full avuncular, HA=third degree relatives (incl half avuncular), and
+#' U=unrelated. For \code{Complex='full'} there are numerous double relationship
+#'   considered (PO & HS, HS & HA, etc), making both numerator and denominator
+#'   in the scaling step less unambiguous, and the returned probabilities an
+#'   approximation.
+#'
+#'  Computational under/overflow issues are reduced by subtracted the
 #'   maximum value before converting from log to regular scale. Probabilities
 #'   that would still be smaller than the machine precision (\code{(LL -
 #'   min(LL)/2) < log10(.Machine$double.xmin)}) are set to NA en then to 0,
@@ -277,6 +286,16 @@ CalcParentProbs <- function(Pedigree = NULL, GenoM = NULL, quiet = FALSE, nCores
 #' @param LLv a vector with log10-likelihoods. All values >0 are set to NA.
 #'
 #' @return a vector with probabilities, with the same length and names.
+#'
+#' @examples
+#' LL_pairs <- CalcPairLL(data.frame(ID1='i042_2003_F',
+#'                          ID2=c('i015_2001_F', 'i022_2002_F', 'i035_2002_F')),
+#'                   GenoM = Geno_griffin, Complex='simp', Err=1e-3, Plot=FALSE)
+#' prob_pairs <- plyr::aaply(as.matrix(LL_pairs[,10:16]), .margin=1, LLtoProb)
+#' round(prob_pairs, 3)
+#' # i035_2002_F is MHS of i042_2003_F, but when not conditioning on any other
+#' # relatives has a higher LL to be 3rd degree relative (HA)
+#' # (possibly genotyping errors, or just randomness of Mendelian inheritance)
 #'
 #' @export
 
@@ -327,9 +346,6 @@ LLtoProb <- function(LLv)   # vector with likelihoods
 #'   \item{.}{HS \eqn{\rightarrow} HA}
 #'   \item{.}{U \eqn{\rightarrow} U}
 #'   \item{.}{PO \eqn{\rightarrow} DUP (only if 'DUP' already among column names)}
-#'
-#' @examples
-#' # TODO
 #'
 #' @keywords internal
 

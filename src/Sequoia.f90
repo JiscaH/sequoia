@@ -1649,7 +1649,7 @@ do i=1,nInd-1
     if ((LLtmp(1) - LLtmp(2)) > TF)  then   ! what threshold?
       nDupGenos = nDupGenos + 1
       DupGenos(nDupGenos) = i
-      DupGenos(nDupGenos + nInd) = j
+      DupGenos(nDupGenos + dupratio*ng) = j
       nMisMatch(nDupGenos) = CountMismatch
       SnpdBoth(nDupGenos) = SnpdBoth_ij
       DupLR(nDupGenos) = LLtmp(1) - LLtmp(2)
@@ -2344,6 +2344,7 @@ implicit none
 double precision, intent(INOUT) :: TotLL(42)
 integer :: i, j, k, Round, isP(2), BYRank(nInd), BYRank_Selfed(nInd)
 double precision :: SortBY(nInd)
+logical :: withPrior
 
 AgePhase = 0                                       
  
@@ -2361,6 +2362,9 @@ if (ANY(Parent /= 0)) then
   call CheckPedigree(.TRUE.)
   call UpdateAllProbs()
   if(quiet<1)  call rprint_tbl_update_b()
+  withPrior = .TRUE.
+else
+  withPrior = .FALSE.
 endif
 
 if(quiet==0)  call rprint_tbl_update_a(0,102) ! 'parents   ')
@@ -2384,9 +2388,9 @@ do Round=1,41
   call rchkusr()
   if(quiet==-1)  call rprint_tbl_update_a(Round,102) ! 'parents   ')
   if (hermaphrodites/=0) then
-    call Parentage(BYRank_Selfed)
+    call Parentage(BYRank_Selfed, withPrior .and. Round==1)
   else
-    call Parentage(BYrank)       
+    call Parentage(BYrank, withPrior .and. Round==1)       
   endif
   call UpdateAllProbs()
   if(quiet==-1)  call rprint_tbl_update_b()  
@@ -3037,16 +3041,14 @@ do x=1, nInd
   
   if (Parent(i,1)/=curPar(1) .or. Parent(i,2)/=curPar(2)) then
     if (Complx == 0)  call UpdateMate(i, Sex(i), curPar, ParOnly) 
-    if (hermaphrodites /= 0) then
+    if (hermaphrodites /= 0  .and. .not. ParOnly) then
       call CheckSelfed(i,Sex(i))
       if (SelfedIndiv(i) .and. all(Parent(i,:)==0)) then
         do k=1,2
-          if (Parent(i,k)==0) then
-            call NewSibship(i, 0, k)
-          endif
+          call NewSibship(i, 0, k)
         enddo
         do k=1,2
-          DumClone( Parent(i,k), k) = Parent(i,3-k)
+          DumClone(-Parent(i,k), k) = -Parent(i,3-k)
         enddo
       endif
     endif
@@ -3057,13 +3059,14 @@ end subroutine CheckPedigree
 
 ! ######################################################################
 
-subroutine Parentage(BYrank)
+subroutine Parentage(BYrank, withPrior)
 use Global
 use sort_module 
 use OHfun, ONLY: QLR_PO           
 implicit none
 
 integer, intent(IN) :: BYrank(nInd)
+logical, intent(IN) :: withPrior                                
 integer, parameter :: mxxCP = 5*mxCP
 integer :: i, j, x, y, k, CandPar(mxxCP, 2), nCP(2), curPar(2), SexTmp(2), &
   CP_rank(mxxCP), CP_tmp(mxxCP)
@@ -3097,7 +3100,7 @@ do x=1, nInd
       if (nCP(sex(j))==mxxCP)  cycle
     endif
     if (ANY(Parent(j,:)==i)) cycle
-    if (ANY(CandPar==j) .and. Sex(j)<3) cycle  ! already included                                                                                             
+    if (ANY(CandPar==j) .and. (Sex(j)<3 .or. withPrior)) cycle  ! already included                                                                                             
     if (QLR_PO(i,j) < TF) cycle
     if (AgeDiff(i,j) <= 0)  cycle                                                           
     call ChkAncest(j,sex(j), i,sex(i), AncOK)  ! check that i is not an ancestor of j
@@ -3261,7 +3264,11 @@ do m=1,2
   do u = 1, nCP(m)
     if (CandPar(u,m) > 0) then
       if (Sex(CandPar(u,m)) > 2) then
-        SexUnk(u,m) = .TRUE.
+        if (A>0 .and. .not. any(CandPar(:,3-m) == CandPar(u,m))) then  ! pedigree prior
+          SexUnk(u,m) = .FALSE.  
+        else
+          SexUnk(u,m) = .TRUE.
+        endif
         if (DoMtDif) then
           if (A>0) then
             if (m==2 .and. mtDif(A, CandPar(u,m)))  SexUnk(u,m) = .FALSE.   ! cannot be maternal relative
@@ -4528,7 +4535,7 @@ implicit none
 integer, intent(IN) :: A
 logical, intent(IN) :: withFS
 double precision, intent(OUT) :: LR
-integer :: l, x,u, z, v
+integer :: l, x,u, z, v,y
 double precision :: PrX(3), PrXY(3,3,3), PrL(nSnp,4), LLtmp(4), PrZV(3,3), PrA(3,3) 
 
 PrL = 0D0
@@ -4542,13 +4549,15 @@ do l=1,nSnp
     PrX(x) = PrA(x, x) * AHWE(x,l)  ! selfed
     PrXY(x,:,1) = PrA(x, :) * AHWE(x,l) * AHWE(:,l)   ! parents U
     PrXY(x,:,2) = PrA(x, :) * AKAP(x,:,l) * AHWE(:,l)   ! parents PO
-    do z=1,3
-      do v=1,3
-        PrZV(z,v) = SUM(PrA(x, :) * AKA2P(x,z,v) * AKA2P(:,z,v) * &
-          AHWE(z,l) * AHWE(v,l))    ! parents FS
+    do y=1,3
+      do z=1,3
+        do v=1,3
+          PrZV(z,v) = PrA(x,y) * AKA2P(x,z,v) * AKA2P(y,z,v) * &
+            AHWE(z,l) * AHWE(v,l)    ! parents FS. 
+        enddo
       enddo
+      PrXY(x,y,3) = SUM(PrZV)
     enddo
-    PrXY(x,:,3) = SUM(PrZV)
   enddo
   PrL(l,1) = LOG10(SUM(PrX))
   do u=1,3
@@ -4850,7 +4859,7 @@ else
   fclsib = .FALSE.
 endif  
 
-if (Complx==2 .and. .not. (SelfedIndiv(A) .or. SelfedIndiv(B)) .and. hermaphrodites/=2) then     
+if (Complx==2 .and. .not. (SelfedIndiv(A) .or. SelfedIndiv(B))) then     
   if (AgeDiff(A,B)>0 .and. LLg(1)/=impossible) then
     do x=1,3
       if (ALRAU(1,x)==impossible)  cycle
@@ -4969,7 +4978,7 @@ if (Complx==2 .and. .not. (SelfedIndiv(A) .or. SelfedIndiv(B)) .and. hermaphrodi
   if (LLg(2)==MaybeOtherParent)  LL(2) = MaybeOtherParent
 endif
 
-if (hermaphrodites==2) then
+if (hermaphrodites/=0) then
   call PairFSSelfed(A, B, LLZ(2))
   if (LLZ(2) > LLg(2) .and. LLZ(2) < 0d0) then
     LLg(2) = LLZ(2)
@@ -6493,7 +6502,7 @@ kX = (/kA, kB, kC/)
 if (Hermaphrodites/=0) then
   do s=1,3
     if (iX(s) >=0)  cycle
-    if (DumClone(iX(s), kX(s))/=0) then
+    if (DumClone(-iX(s), kX(s))/=0) then
       LL = NotImplemented
       Return
     endif
@@ -14618,7 +14627,7 @@ endif
 call ChkDoQuick(SB,kB,DoQuick)
 
 ParBisClone = .FALSE.
-if (hermaphrodites/=0 .and. DoQuick==-3) then
+if (hermaphrodites/=0 .and. DoQuick==-3) then   ! -3: SB has a dummyclone
   do f=1, nS(SB,kB)
     if (DumClone(SB,kB) == -Parent(SibID(f,SB,kB), 3-kB)) then
       ParBisClone(f) = .TRUE.

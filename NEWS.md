@@ -17,6 +17,7 @@ by fixing MaxMismatch to the total number of SNPs and T_filter to -999.0.
 - `PedCompare`: when an incorrect half-sibling is added to a true singleton-sibship-with-grandparent,
   this now counts as 1 mismatch; this erroneously was 3 mismatches (entire sibship wrong).
 - in `sequoia`, the default value for `CalcParentLLR` is changed from TRUE to FALSE.
+- fix bug which caused no parents to be assigned to individuals produced by selfing
  
 
 # sequoia 2.11.5

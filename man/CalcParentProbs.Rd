@@ -30,8 +30,8 @@ probability that the two samples are duplicates.}
 \value{
 the \code{Pedigree} dataframe with the three applicable columns
 renamed to id-dam-sire, and 7 additional columns:
-\item{Probdam}{Probability that individual in dam column is the maternal parent,
-  rather than otherwise related (LL(PO)/sum(LL))}
+\item{Probdam}{Probability that individual in dam column is the maternal
+  parent, rather than otherwise related (LL(PO)/sum(LL))}
 \item{Probsire}{Analogous for sire}
 \item{Probpair}{Probability for id-dam-sire trio. Approximated as the minimum
   of dam conditional on sire and sire conditional on dam, thus not including
@@ -55,10 +55,10 @@ The returned probabilities are calculated from the likelihoods used
   all possible relationships. For \code{Complex='simp'} these are
   PO=parent-offspring, FS=full siblings, HS=half siblings, GP=grand-parental,
   FA=full avuncular, HA=third degree relatives (incl half avuncular), and
-  U=unrelated. For \code{Complex='full'} there are numerous double relationship
-  considered (PO & HS, HS & HA, etc), making both numerator and denominator
-  in the scaling step less unambiguous, and the returned probabilities an
-  approximation.
+  U=unrelated. For \code{Complex='full'} there are numerous double
+  relationship considered (PO & HS, HS & HA, etc), making both numerator and
+  denominator in the scaling step less unambiguous, and the returned
+  probabilities an approximation.
 
  The likelihoods are calculated by calling \code{\link{CalcPairLL}} once or
  twice for each id-dam and id-sire pair: once not conditioning on the
@@ -82,7 +82,6 @@ Subsetting the genotype data may give different results, as the likelihoods
  and thus the probabilities depend on the allele frequencies in the sample.
 }
 \examples{
-
 test_ped <- Ped_griffin[21:25,]
 # add an incorrect sire to illustrate
 test_ped$sire <- as.character(test_ped$sire)

@@ -23,8 +23,4 @@ a matrix with similar dimensions, but changed column order:
 change the order for dummy individuals so that the
  results are easily comparable with genotyped individuals
 }
-\examples{
-# TODO
-
-}
 \keyword{internal}

@@ -364,7 +364,6 @@ sequoia <- function(GenoM = NULL,
                     StrictGenoCheck = TRUE,
                     ErrFlavour = "version2.9")
 {
-
   TimeStart <- Sys.time()
 
   # set quiet & Plot ----
@@ -374,11 +373,7 @@ sequoia <- function(GenoM = NULL,
   if (is.null(Plot))   # default
     Plot <- ifelse(quietR, FALSE, TRUE)
 
-  # Module ----
-  # MaxSibIter is now fully deprecated.
-  Module <- factor(Module, levels = c("pre", "dup", "par", "ped"))
-  if (is.na(Module))  stop("'Module'  must be 'pre', 'dup', 'par', or 'ped'")
-
+  # check input ----
   if (!is.null(LifeHistData) & !inherits(LifeHistData, 'data.frame'))
     stop("`LifeHistData` must be a data.frame or NULL")
   if (!is.null(SeqList) & !inherits(SeqList, 'list'))
@@ -393,6 +388,22 @@ sequoia <- function(GenoM = NULL,
     }
   }
 
+
+  # Module ----
+  # MaxSibIter is now fully deprecated.
+  Module <- factor(Module, levels = c("pre", "dup", "par", "ped"))
+  if (is.na(Module))  stop("'Module'  must be 'pre', 'dup', 'par', or 'ped'")
+  dostep <- c('pre' = TRUE,
+              'dup' = Module!='pre',
+              'par' = Module %in% c('par','ped'),
+              'ped' = Module=='ped')
+  if ('DupGenotype' %in% names(SeqList))  dostep['dup'] <- FALSE
+  if ('PedigreePar' %in% names(SeqList) & Module=='ped')  dostep['par'] <- FALSE
+  # module='par' + PedigreePar: parentage assignment with pedigree-prior
+  # for output:
+  DupList <- NULL
+  ParList <- NULL
+  SibList <- NULL
 
   # Check genotype matrix ----
   GenoM[is.na(GenoM)] <- -9
@@ -499,7 +510,7 @@ sequoia <- function(GenoM = NULL,
   }
 
 
-  # hermaprhodites ----
+  # hermaphrodites ----
   if (any(LifeHistData$Sex==4, na.rm=TRUE) && PARAM$Herm == "no") {  #!grepl("herm", PARAM$Complex)) {
     if (!quietR) cli::cli_alert_warning("Detected hermaphrodites (sex=4), changing `Herm` to 'A'")
 #    PARAM$Complex <- "herm"
@@ -518,7 +529,7 @@ sequoia <- function(GenoM = NULL,
 
 
   # @@ 2 @@ Duplicate check ----
-  if (Module != "pre" & !'DupGenotype' %in% names(SeqList)) {
+  if (dostep[['dup']]) {
     if(!quietR)  message(cli::col_green("\n~~~ Duplicate check ~~~"))
     DupList <- DuplicateCheck(GenoM, FortPARAM, quiet=quietR)
     utils::flush.console()
@@ -527,26 +538,30 @@ sequoia <- function(GenoM = NULL,
     } else if (length(DupList)==0 & !quietR) {
       cli::cli_alert_success("No potential duplicates found")
     } else if ('DupGenotype' %in% names(DupList) && nrow(DupList[['DupGenotype']])>=nrow(GenoM)) {
-      cli::cli_alert_danger(paste('The high number of putative duplicate genotypes suggests',
+      Sys.sleep(1)   # ensures warnings are printed first
+      cli::cli_alert_danger(cli::col_red(paste('The high number of putative duplicate genotypes suggests',
                                   'that the genotype data is not informative enough for',
-                                  'parentage assignment.'), wrap=TRUE)
-      stop()
+                                  'parentage assignment. Interpret results with caution!')), wrap=TRUE)
+      # dostep[c('par', 'ped')] <- FALSE
     }
-  } else DupList <- NULL
+  }
   utils::flush.console()
 
 
-  # @@ 3 @@ Parentage assignment ---- 
-  if (Module != "dup" & "PedigreePar" %in% names(SeqList)) {
-    if (!quietR)  cli::cli_alert_info("using `PedigreePar` in `SeqList`")
+  # @@ 3 @@ Parentage assignment ----
+  if (any(dostep[c('par', 'ped')]) & "PedigreePar" %in% names(SeqList)) {
+    if (!quietR) {
+      message(cli::col_green("\n~~~ Parentage assignment ~~~"))
+      cli::cli_alert_info("using `PedigreePar` in `SeqList`")
+    }
     PedParents <- PedPolish(SeqList[["PedigreePar"]], gID = rownames(GenoM),
                             ZeroToNA = TRUE, DropNonSNPd = TRUE)
   } else {
     PedParents <- NULL
   }
-  
-  if (Module == "par"  | (Module  == "ped" & !"PedigreePar" %in% names(SeqList))) {
-    if(!quietR & Module == "par" & !is.null(PedParents)) {
+
+  if (dostep[['par']]) {
+    if(!quietR & !is.null(PedParents)) {
       message(cli::col_green("\n~~~ Parentage assignment with pedigree-prior ~~~"))  # only sensible with Herm=A or B (?)
     } else if(!quietR) {
       message(cli::col_green("\n~~~ Parentage assignment ~~~"))
@@ -560,30 +575,28 @@ sequoia <- function(GenoM = NULL,
       SummarySeq(ParList, Panels="G.parents")
     }
 
-  } else if (Module != "dup" & "PedigreePar" %in% names(SeqList)) {  # don't include for 'dup'; confusing.
+  } else if (dostep[['ped']]) {  # PedigreePar provided as input
     ParList <- list(PedigreePar = PedParents)   # re-use assigned parents given as SeqList input (after polishing)
-  } else {
-    ParList <- NULL
   }
   utils::flush.console()
 
   # check that PedigreePar is a valid pedigree (no indiv is its own ancestor)
   W <- tryCatch.W.E(getGenerations(ParList$PedigreePar, StopIfInvalid=FALSE))$warning
-  if (!is.null(W)) {
-    if (Module=="ped")  cli::cli_alert_danger("Cancelling full pedigree reconstruction.")
+  if (!is.null(W) & dostep[['ped']]) {
+    dostep['ped'] <- FALSE
   }
 
 
   # Update ageprior ----
-  if (Module %in% c("par", "ped") & !"AgePriors" %in% names(SeqList) & is.null(W) &
+  if (any(dostep[c('par', 'ped')]) & !"AgePriors" %in% names(SeqList) & is.null(W) &
       !"PedigreePar" %in% names(SeqList) && !is.null(LifeHistData)) {
     if (Plot)  Sys.sleep(1)  # else no time to notice previous plot
     # in case MakeAgePrior throws error, do return parentage results:
     AgePriors <- tryCatch( do.call(MakeAgePrior,
                                    c(list(Pedigree = ParList$PedigreePar[, 1:3],
                                           LifeHistData = LifeHistData[LifeHistData$ID %in% rownames(GenoM),],
-                                          Plot = Plot & Module=="ped",
-                                          quiet = !(!quietR & Module=="ped")),
+                                          Plot = Plot & dostep['ped'],
+                                          quiet = !(!quietR & dostep['ped'])),
                                      args.AP)),
                            error = function(e) {
                              message("AgePrior error! \n", e)
@@ -602,7 +615,7 @@ sequoia <- function(GenoM = NULL,
 
 
   # @@ 4 @@ Full pedigree reconstruction ----
-  if (Module == "ped" & is.null(W)) {
+  if (dostep['ped']) {
     if (!all(apply(AgePriors, 2, function(x) any(x > 0))))
       stop("AgePriors error: some relationships are impossible for all age differences")
     if(!quietR)  message(cli::col_green("\n~~~ Full pedigree reconstruction ~~~"))
@@ -611,12 +624,12 @@ sequoia <- function(GenoM = NULL,
                          Parents = ParList$PedigreePar, mtDif=mtDif,
                          DumPfx = PARAM$DummyPrefix, quiet = quietR)
     ParList <- ParList[names(ParList) != "AgePriorExtra"]  # else included 2x w same name
-  } else SibList <- NULL
+  }
 
   #=====================
   # Output ----
 
-  if (quiet=='verbose' & Module %in% c('par', 'ped')) {
+  if (quiet=='verbose' & any(dostep[c('par', 'ped')])) {
     cli::cli_alert_info(paste("You can use `SummarySeq()` for pedigree details, ",
                         "`CalcParentProbs()` for assignment probabilities, ",
                         "and `EstConf()` for confidence estimates"), wrap=TRUE)
@@ -636,13 +649,12 @@ sequoia <- function(GenoM = NULL,
   }
   if (length(Excl)>0)  OUT <- c(OUT, Excl)
   if (length(OUT_LH)>0)  OUT <- c(OUT, OUT_LH)
-  OUT[["AgePriors"]] <- AgePriors
-  OUT[["LifeHist"]] <- LifeHistData
-  if (as.numeric(Module) > 1)  OUT <- c(OUT, DupList)
-  if (as.numeric(Module) > 2)  OUT <- c(OUT, ParList)
-  if (as.numeric(Module) > 3)  OUT <- c(OUT, SibList)
+  OUT <- c(OUT,
+           list(AgePriors = AgePriors,
+                LifeHist = LifeHistData),
+           DupList, ParList, SibList)
 
-  if (Plot & Module == "ped" & is.null(W)) {
+  if (Plot & dostep[['ped']]) {
     PlotAgePrior(OUT$AgePriorExtra)
     SummarySeq(OUT, Panels="G.parents")
   }

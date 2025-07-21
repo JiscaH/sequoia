@@ -15,11 +15,31 @@ a vector with probabilities, with the same length and names.
 \description{
 transform a vector with log10 likelihoods to a vector with
  probabilities summing to one.
-}
-\details{
-Computational under/overflow issues are reduced by subtracted the
+
+ @details The returned probabilities are calculated from the likelihoods used
+  throughout the rest of this package, by scaling them to sum to one across
+  all possible relationships. For \code{Complex='simp'} these are
+  PO=parent-offspring, FS=full siblings, HS=half siblings, GP=grand-parental,
+  FA=full avuncular, HA=third degree relatives (incl half avuncular), and
+U=unrelated. For \code{Complex='full'} there are numerous double relationship
+  considered (PO & HS, HS & HA, etc), making both numerator and denominator
+  in the scaling step less unambiguous, and the returned probabilities an
+  approximation.
+
+ Computational under/overflow issues are reduced by subtracted the
   maximum value before converting from log to regular scale. Probabilities
   that would still be smaller than the machine precision (\code{(LL -
   min(LL)/2) < log10(.Machine$double.xmin)}) are set to NA en then to 0,
   instead of \code{-Inf}, to avoid issues when scaling to sum to 1.
+}
+\examples{
+LL_pairs <- CalcPairLL(data.frame(ID1='i042_2003_F',
+                         ID2=c('i015_2001_F', 'i022_2002_F', 'i035_2002_F')),
+                  GenoM = Geno_griffin, Complex='simp', Err=1e-3, Plot=FALSE)
+prob_pairs <- plyr::aaply(as.matrix(LL_pairs[,10:16]), .margin=1, LLtoProb)
+round(prob_pairs, 3)
+# i035_2002_F is MHS of i042_2003_F, but when not conditioning on any other
+# relatives has a higher LL to be 3rd degree relative (HA)
+# (possibly genotyping errors, or just randomness of Mendelian inheritance)
+
 }

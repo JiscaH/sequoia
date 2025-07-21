@@ -374,7 +374,7 @@ CalcPairLL <- function(Pairs = NULL,
                   parentsrf = as.integer(PedN$PedPar),
                   dumparrf = as.integer(PedN$DumPar),
                   llrf = double(nrels*Np)
-  )   # TODO: print messages during prep stage
+  ) 
 
   # wrap output ----
   RelNames <- c("PO", "FS", "HS", "GP", "FA", "HA", "U")
