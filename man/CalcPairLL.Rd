@@ -170,7 +170,7 @@ The \code{Pairs} dataframe including all optional columns listed
   \item{888}{Already assigned in the provided pedigree (see \code{dropPar}
     arguments)}
   \item{999}{\code{NA}. If all values for the pair are \code{999}, one or both
-    individuals are not genotyped and not dummyfiable.}
+    individuals are not genotyped and not dummifiable.}
 }
 \description{
 For each specified pair of individuals, calculate the

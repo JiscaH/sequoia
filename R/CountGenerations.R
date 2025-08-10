@@ -64,7 +64,8 @@ getGenerations <- function(Ped, StopIfInvalid=TRUE) {
            "\n Use getGenerations(, StopIfInvalid=FALSE) to find the culprit",
            call.=FALSE)
     } else {
-      warning(msg, immediate.=TRUE)
+      cli::cli_alert_danger(msg)
+      cli::cli_alert_info("individuals within a pedigree loop have generation=<NA>")
     }
   }
   invisible( setNames(Ped$gen, Ped[,1]) )

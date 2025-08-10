@@ -226,7 +226,7 @@ includes the OH counts between offspring and each parent, as well as
 cases where the offspring should have been heterozygous, but isn't
 (mother $aa$, father $AA$, offspring $aa$ or $AA$), and cases where it
 is heterozygous, but shouldn't be (when mother and father are identical
-homozyotes). This metric is used to subset 'compatible' parent-pairs
+homozygotes). This metric is used to subset 'compatible' parent-pairs
 when there are candidate parents from both sexes, or with unknown sex.
 
 ### Maximum mismatches
@@ -239,7 +239,7 @@ parameters `Err` and `ErrFlavour`.
 
 ## Likelihoods
 
-Assignments are based on the likelihods for all different possible
+Assignments are based on the likelihoods for all different possible
 relationships between a pair, calculated conditional on all assignments
 made up onto that point. If the focal relationship is more likely than
 all alternatives (by a margin `Tassign`), the assignment is made.
@@ -580,7 +580,7 @@ In `sequoia()`, an incorrect assignment early on may cause a cascade of
 other incorrect assignments later in the run, and great care is taken to
 prevent this. On the flip side, when there is limited genetic or birth
 year information and/or very few parents have been genotyped, the
-cascade of *correct* assignments, where maternal assignments fascilitate
+cascade of *correct* assignments, where maternal assignments facilitate
 paternal assignments and v.v. (Figure \@ref(fig:ClusterMatPat)), may
 never take off. For such situations, different programs with MCMC based
 approaches are more suitable.
@@ -2039,7 +2039,7 @@ parent, or when it forms a complementary parent-pair with such an assigned
 parent. Candidate parent--offspring pairs that are not a genetic match will
 never be assigned, and non-genotyped candidate parents are ignored.
 
-In absence of a pedigree prior and/or non-hermaprhodite parents, only instances
+In absence of a pedigree prior and/or non-hermaphrodite parents, only instances
 of selfing can be assigned.
 
 The 'pedigree prior' can only be used during parentage assignment, by
@@ -2134,7 +2134,7 @@ source code.
 ## Parthenogenesis
 There are several types of parthenogenesis or asexual reproduction (https://en.wikipedia.org/wiki/Parthenogenesis). From a single-SNP perspective, 
 some resemble selfing (joining of two gametes produced by the same individual),
-and females can be represented as hermaprodites in sequoia. Parthenogenesis
+and females can be represented as hermaphrodites in sequoia. Parthenogenesis
 were genetically identical copies or haploids are produced, are not implemented. 
 
 

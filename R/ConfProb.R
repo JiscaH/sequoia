@@ -14,7 +14,7 @@
 #'   \emph{observed} (inferred-from-simulated) pedigree. In contrast, the false
 #'   negative & false positive assignment rates are proportions of the number of
 #'   parents in the \emph{true} (reference) pedigree. Each rate is calculated
-#'   separatedly for dams & sires, and separately for each category
+#'   separately for dams & sires, and separately for each category
 #'   (\strong{G}enotyped/\strong{D}ummy(fiable)/\strong{X} (none)) of
 #'   individual, parent and co-parent.
 #'
@@ -109,7 +109,7 @@
 #' Array \code{PedErrors} has three dimensions:
 #' \item{class}{\itemize{
 #'   \item \code{FalseNeg}(atives): could have been assigned but was not
-#' (individual + parent both genotyped or dummyfiable; P1only in
+#' (individual + parent both genotyped or dummifiable; P1only in
 #' \code{PedCompare}).
 #'   \item \code{FalsePos}(itives): no parent in reference pedigree, but
 #' one was assigned based on the simulated data (P2only)
@@ -458,9 +458,17 @@ Counts2Conf <- function(countsL) {
                          Conf.df$sire.cat %in% c('G','X'), ]
   }
 
+  # if category='X', set respective conf to N/A
+  no_dam <- Conf.df[['dam.cat']] == 'X'
+  no_sire <- Conf.df[['sire.cat']] == 'X'
+  Conf.df[['dam.conf']][no_dam] <- NA
+  Conf.df[['sire.conf']][no_sire] <- NA
+  Conf.df[['pair.conf']][no_dam | no_sire] <- NA
+
   # sort rows & columns
   Conf.df <- Conf.df[order(Conf.df$id.cat, Conf.df$dam.cat, Conf.df$sire.cat),
                      c('id.cat', 'dam.cat', 'sire.cat', 'dam.conf', 'sire.conf', 'pair.conf', 'N')]
+  rownames(Conf.df) <- NULL
 
   return( Conf.df )
 }

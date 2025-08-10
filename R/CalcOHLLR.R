@@ -21,7 +21,7 @@
 #'   compared to the \code{\link{sequoia}} default, resulting in somewhat lower
 #'   \code{LLR} values.
 #'
-#'   A negative LLR for A's parent B indicates either that B is not truely the
+#'   A negative LLR for A's parent B indicates either that B is not truly the
 #'   parent of A, or that B's parents are incorrect. The latter may cause B's
 #'   presumed true, unobserved genotype to divert from its observed genotype,
 #'   with downstream consequences for its offspring. In rare cases it may also

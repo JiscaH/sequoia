@@ -31,7 +31,7 @@
 #'   (Genotyped/Dummy/X), use the 'highest' category across the two pedigrees
 #'   (\code{TRUE}, default) or only consider \code{Ped1} (\code{Symmetrical =
 #'   FALSE}).
-#' @param minSibSize  minimum requirements to be considered 'dummyfiable',
+#' @param minSibSize  minimum requirements to be considered 'dummifiable',
 #'   passed to \code{\link{getAssignCat}}:
 #'   \itemize{
 #'      \item '1sib' : sibship of size 1, with or without grandparents. The
@@ -133,7 +133,7 @@
 #'   avuncular (i.e. genetics inconclusive because the candidate has no parent
 #'   assigned, and ageprior inconclusive).
 #'
-#' @section Dummyfiable:
+#' @section dummifiable:
 #'   Considered as potential dummy individuals are all non-genotyped individuals
 #'   in Pedigree 1 who have, according to either pedigree, at least 2 genotyped
 #'   offspring, or at least one genotyped offspring and a genotyped parent.
@@ -467,9 +467,16 @@ PedCompare <- function(Ped1 = NULL,
                                      sameSize = any(cat.props > 0 & cat.props < 0.01)))
       },
       error = function(e) {
-        message("PlotPedComp: Plotting area too small")
+        message("PlotPedComp: Plotting area too small, or other plotting issue")
         return(NA)
       })
+
+    ped.con <- tryCatch(PedPolish(PedC[,1:3]),
+                      error = function(e) {
+                        cli::cli_alert_warning(c("'ConsensusPed' in output is not a valid pedigree; ",
+                                                "if you like to use it, please check carefully, edit, and run PedPolish()"),
+                                              wrap=TRUE)
+                      })
   }
 
 

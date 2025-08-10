@@ -35,7 +35,7 @@ fewer than 999 dummy females (males).}
 (\code{TRUE}, default) or only consider \code{Ped1} (\code{Symmetrical =
 FALSE}).}
 
-\item{minSibSize}{minimum requirements to be considered 'dummyfiable',
+\item{minSibSize}{minimum requirements to be considered 'dummifiable',
  passed to \code{\link{getAssignCat}}:
  \itemize{
     \item '1sib' : sibship of size 1, with or without grandparents. The
@@ -157,7 +157,7 @@ The comparison is divided into different classes of `assignable'
   assigned, and ageprior inconclusive).
 }
 
-\section{Dummyfiable}{
+\section{dummifiable}{
 
   Considered as potential dummy individuals are all non-genotyped individuals
   in Pedigree 1 who have, according to either pedigree, at least 2 genotyped

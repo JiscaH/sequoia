@@ -11,7 +11,7 @@ getAssignCat(Pedigree, SNPd, minSibSize = "1sib1GP")
 
 \item{SNPd}{character vector with ids of genotyped individuals.}
 
-\item{minSibSize}{minimum requirements to be considered dummyfiable is 1
+\item{minSibSize}{minimum requirements to be considered dummifiable is 1
 genotyped offspring, and
  \itemize{
     \item '1sib1GP': at least 1 grandparent (G or D) or 1 more offspring (G
@@ -25,12 +25,12 @@ The \code{Pedigree} dataframe with 3 additional columns,
   \code{id.cat}, \code{dam.cat} and \code{sire.cat}, with coding similar to
   that used by \code{\link{PedCompare}}:
 \item{G}{Genotyped}
-\item{D}{Dummy or 'dummyfiable'}
-\item{X}{Not genotyped and not dummyfiable}
+\item{D}{Dummy or 'dummifiable'}
+\item{X}{Not genotyped and not dummifiable}
 }
 \description{
 Identify which individuals are SNP genotyped (G), and which can
-  potentially be substituted by a dummy individual ('Dummyfiable', D).
+  potentially be substituted by a dummy individual ('dummifiable', D).
 }
 \details{
 Non-genotyped individuals can potentially be substituted by a dummy

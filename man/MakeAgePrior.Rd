@@ -111,7 +111,7 @@ A matrix with the probability ratio of the age difference between two
      and smoothing}
    \item{Weights}{vector length 4, the weights used to flatten the
     distributions}
-    \item{LR.RU.A}{the ageprior, flattend and/or smoothed}
+    \item{LR.RU.A}{the ageprior, flattened and/or smoothed}
    \item{Specs.AP}{the names of the input \code{Pedigree} and
    \code{LifeHistData} (or \code{NULL}), \code{lambdaNW}, and the 'effective'
      settings (i.e. after any automatic update) of \code{Discrete},

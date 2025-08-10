@@ -1,7 +1,7 @@
 #' @title Assignability of Reference Pedigree
 #'
 #' @description Identify which individuals are SNP genotyped (G), and which can
-#'   potentially be substituted by a dummy individual ('Dummyfiable', D).
+#'   potentially be substituted by a dummy individual ('dummifiable', D).
 #'
 #' @details  Non-genotyped individuals can potentially be substituted by a dummy
 #'   during pedigree reconstruction by \code{\link{sequoia}} when they have at least one genotyped
@@ -21,7 +21,7 @@
 #'
 #' @param Pedigree  dataframe with columns id-dam-sire. Reference pedigree.
 #' @param SNPd  character vector with ids of genotyped individuals.
-#' @param minSibSize  minimum requirements to be considered dummyfiable is 1
+#' @param minSibSize  minimum requirements to be considered dummifiable is 1
 #'  genotyped offspring, and
 #'   \itemize{
 #'      \item '1sib1GP': at least 1 grandparent (G or D) or 1 more offspring (G
@@ -34,8 +34,8 @@
 #'   \code{id.cat}, \code{dam.cat} and \code{sire.cat}, with coding similar to
 #'   that used by \code{\link{PedCompare}}:
 #' \item{G}{Genotyped}
-#' \item{D}{Dummy or 'dummyfiable'}
-#' \item{X}{Not genotyped and not dummyfiable}
+#' \item{D}{Dummy or 'dummifiable'}
+#' \item{X}{Not genotyped and not dummifiable}
 #'
 #' @examples
 #' PedA <- getAssignCat(Ped_HSg5, rownames(SimGeno_example))
@@ -92,17 +92,17 @@ getAssignCat <- function(Pedigree, SNPd, minSibSize = "1sib1GP") {
 
       if (minSibSize == "2sib") {
          # matcheable by PedCompare
-         Dummyfiable_pz <- Parent_todo[[p]][NumOff_GD > 1]
+         dummifiable_pz <- Parent_todo[[p]][NumOff_GD > 1]
       } else if (minSibSize == "1sib1GP") {
         # potentially assignable by sequoia:
         # also if 1 offspring + at least 1 genotyped/dummy parent (=sibship grandparent)
         Ped_par <- Pedigree[match(Parent_todo[[p]], Pedigree$id), ]
         HasGP_GD <- Ped_par$dam %in% Ped_GD$id | Ped_par$sire %in% Ped_GD$id
-        Dummyfiable_pz <- Parent_todo[[p]][NumOff_GD > 1 | (NumOff_GD>0 & HasGP_GD)]
+        dummifiable_pz <- Parent_todo[[p]][NumOff_GD > 1 | (NumOff_GD>0 & HasGP_GD)]
       }
 
-      Pedigree$id.cat[ Pedigree$id %in% Dummyfiable_pz ] <- 'D'
-      n_dummies_found[p] <- length(Dummyfiable_pz)
+      Pedigree$id.cat[ Pedigree$id %in% dummifiable_pz ] <- 'D'
+      n_dummies_found[p] <- length(dummifiable_pz)
     }
     if (sum(n_dummies_found)==0)  break
   }

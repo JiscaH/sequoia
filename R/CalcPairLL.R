@@ -100,7 +100,7 @@
 #'   \item{888}{Already assigned in the provided pedigree (see \code{dropPar}
 #'     arguments)}
 #'   \item{999}{\code{NA}. If all values for the pair are \code{999}, one or both
-#'     individuals are not genotyped and not dummyfiable.}
+#'     individuals are not genotyped and not dummifiable.}
 #'
 #' @section Why does it say 444 (no can do) for all relationships?:
 #'  This happens when the pair does not pass the initial check which prevents
@@ -527,7 +527,7 @@ FortifyPairs <- function(Pairs,   # pairs with character IDs etc
 
   for (x in 1:2) {
 #    if (!all(Pairs[,ID[x]] %in% c(gID, unlist(Renamed))))
-#      stop("All individuals must be genotyped or dummyfiable", call.=FALSE)
+#      stop("All individuals must be genotyped or dummifiable", call.=FALSE)
     Pairs[, paste0(ID[x], ".num")] <- ifelse(Pairs[, ID[x]] %in% gID,
                                              GenoNums[Pairs[, ID[x]]],
                                              0)

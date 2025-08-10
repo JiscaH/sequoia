@@ -56,7 +56,7 @@ A list with the following elements:
     \item offspringCat: Genotyped, Dummy, or Observed* (*: only when
     \code{Pedigree} is provided rather than \code{SeqList}, for ids which
     are not listed in \code{SNPd} and do not conform to \code{DumPrefix} +
-    number (i.e. (almost) al individuals when \code{SNPd = NULL}, the
+    number (i.e. (almost) all individuals when \code{SNPd = NULL}, the
     default).
     \item offspringSex: Female, Male, Unknown, or Herm* (*: hermaphrodite,
     only if any individuals occur as both dam and sire). Based only on

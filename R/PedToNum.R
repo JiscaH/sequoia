@@ -64,11 +64,11 @@ PedToNum <- function(Pedigree = NULL,
   if (DoDummies == "new") {
     PedC <- getAssignCat(Pedigree[,1:3], gID, minSibSize = "1sib1GP")
     # remove duplicates & NA's with intersect()
-    Dummyfiable <- with(PedC, list(dam = intersect(dam, id[id.cat=='D']),
+    dummifiable <- with(PedC, list(dam = intersect(dam, id[id.cat=='D']),
                                      sire = intersect(sire, id[id.cat=='D'])))
     for (k in 1:2) {
-      Renamed[[k]] <- data.frame(name = Dummyfiable[[k]],
-                                 num = -seq_along(Dummyfiable[[k]]),
+      Renamed[[k]] <- data.frame(name = dummifiable[[k]],
+                                 num = -seq_along(dummifiable[[k]]),
                                  stringsAsFactors = FALSE)
     }
   } else if (DoDummies == "old") {

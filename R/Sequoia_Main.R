@@ -329,7 +329,10 @@
 #' write.table(GenoM, file="MyGenoData.txt", row.names=T, col.names=F)
 #'
 #' # later:
-#' GenoM <- as.matrix(read.table("MyGenoData.txt", row.names=1, header=F))
+#' GenoM <- as.matrix(read.table("MyGenoData.txt", row.names=1, header=FALSE))
+#' # or for very large datasets:
+#' GenoM <- data.table::fread('MyGenoData.txt') %>% as.matrix(rownames=1)
+#'
 #' LHdata <- read.table("LifeHistoryData.txt", header=T) # ID-Sex-birthyear
 #' SeqOUT <- sequoia(GenoM, LHdata, Err=0.005)
 #' SummarySeq(SeqOUT)
