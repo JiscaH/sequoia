@@ -18,6 +18,7 @@ by fixing MaxMismatch to the total number of SNPs and T_filter to -999.0.
   this now counts as 1 mismatch; this erroneously was 3 mismatches (entire sibship wrong).
 - in `sequoia`, the default value for `CalcParentLLR` is changed from TRUE to FALSE.
 - fix bug which caused no parents to be assigned to individuals produced by selfing
+- add function `Err_Allele2Locus` 
  
 
 # sequoia 2.11.5

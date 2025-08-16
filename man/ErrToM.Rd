@@ -39,7 +39,6 @@ Make a vector or matrix specifying the genotyping error
   pattern, or a function to generate such a vector/matrix from a single
   value Err.
 
-
 with the probabilities of observed genotypes
   (columns) conditional on actual genotypes (rows), or return a function to
   generate such matrices (using a single value Err as input to that

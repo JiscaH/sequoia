@@ -68,12 +68,14 @@ the same name as its items are ignored, except \code{Module}.}
     consuming, and may take several hours for large datasets.}
 }}
 
-\item{Err}{estimated genotyping error rate, as a single number, or a length 3
-vector with P(hom|hom), P(het|hom), P(hom|het), or a 3x3 matrix. See
-details below. The error rate is presumed constant across SNPs, and
+\item{Err}{assumed per-locus genotyping error rate, as a single number, or a
+length 3 vector with P(hom|hom), P(het|hom), P(hom|het), or a 3x3 matrix.
+See details below. The error rate is presumed constant across SNPs, and
 missingness is presumed random with respect to actual genotype. Using
 \code{Err} >5\% is not recommended, and \code{Err} >10\% strongly
-discouraged.}
+discouraged. See \code{\link{Err_RADseq}} to convert per-allele rates at
+homozygous and heterozygous sites to the required length-3 vector, and
+\code{\link{ErrToM}} for further genotyping error details.}
 
 \item{Tfilter}{threshold log10-likelihood ratio (LLR) between a proposed
 relationship versus unrelated, to select candidate relatives. Typically a
@@ -139,7 +141,7 @@ and individuals scored for fewer than 2 SNPs.}
 and returns a length 3 vector or 3x3 matrix, or choose from inbuilt options
 'version2.9', 'version2.0', 'version1.3', or 'version1.1', referring to the
 sequoia version in which they were the default. Ignored if \code{Err} is a
-vector or matrix. See \code{\link{ErrToM}} for details.}
+vector or matrix.}
 }
 \value{
 A list with some or all of the following components, depending on

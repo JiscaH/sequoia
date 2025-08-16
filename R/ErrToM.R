@@ -4,7 +4,6 @@
 #'   pattern, or a function to generate such a vector/matrix from a single
 #'   value Err.
 #'
-#'
 #' with the probabilities of observed genotypes
 #'   (columns) conditional on actual genotypes (rows), or return a function to
 #'   generate such matrices (using a single value Err as input to that
@@ -100,7 +99,6 @@
 #'  When the SNPs are scored via sequencing (e.g. RADseq or DArTseq), the 3rd
 #'  error rate (hom|het) is typically considerably higher than the other two,
 #'  while for SNP arrays it tends to be similar to P(het|hom).
-#'
 #'
 #' @param Err estimated genotyping error rate, as a single number, or 3x3 or 4x4
 #'   matrix, or length 3 vector. If a single number, an error model is used that
@@ -220,7 +218,7 @@ ErrToM <- function(Err = NA,
 
   if (Return == "matrix") {
     if (is.null(ErrM))  ErrM <- ErV2M(ErrV)
-    dimnames(ErrM) <- list(paste0("act-", 0:2), paste0("obs-", 0:2, "|act"))
+    #dimnames(ErrM) <- list(paste0("act-", 0:2), paste0("obs-", 0:2, "|act"))
     return( ErrM )
 
   } else if (Return == 'vector') {
