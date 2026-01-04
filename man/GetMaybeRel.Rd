@@ -22,10 +22,11 @@ GetMaybeRel(
 )
 }
 \arguments{
-\item{GenoM}{numeric matrix with genotype data: One row per individual,
-one column per SNP, coded as 0, 1, 2, missing values as a negative number
-or NA. You can reformat data with \code{\link{GenoConvert}}, or use other
-packages to get it into a genlight object and then use \code{as.matrix}.}
+\item{GenoM}{numeric matrix with genotype data: One row per individual, one
+column per SNP, coded as 0, 1, 2, missing values as a negative number or
+NA. Row names must be individual IDs, column names are ignored. You can
+reformat data with \code{\link{GenoConvert}}, or use other packages to get
+it into a genlight object and then use \code{as.matrix}.}
 
 \item{SeqList}{list with output from \code{\link{sequoia}}.
 \code{SeqList$Pedigree} is used if present, and \code{SeqList$PedigreePar}

@@ -13,17 +13,23 @@
 #' @return  A named list.
 #'
 #' @keywords internal
+#' @noRd
 
 SpecsToParam <- function(Specs, ErrM = NULL, ErrFlavour = NULL,
                          dimGeno=NULL, ...)
 {
   other_args <- list(...)
+
+  if (!"Complexity" %in% names(Specs))
+    stop('Names of SeqList$Specs not recognised', call.=FALSE)
+
   if ("Module" %in% names(other_args)) {
     Specs$Module <- other_args$Module
   } else if (!"Module" %in% names(Specs)) {
     Specs$Module <- 'ped'  # default
   }
-  if (!"Herm" %in% names(Specs)) {
+
+  if (!"Herm" %in% names(Specs)) {   # backwards compatability
     Specs$Herm <- switch(as.character(Specs$Complexity),
                          mono = "no",
                          simp = "no",
@@ -49,7 +55,7 @@ SpecsToParam <- function(Specs, ErrM = NULL, ErrFlavour = NULL,
                              Err = GenotypingErrorRate,
                              Tfilter,
                              Tassign,
-                             nAgeClasses,
+                             #nAgeClasses,
                              MaxSibshipSize,
                              Module,
                              DummyPrefix = c(DummyPrefixFemale,
@@ -105,6 +111,7 @@ SpecsToParam <- function(Specs, ErrM = NULL, ErrFlavour = NULL,
 #' @return  The 1-row \code{Specs} dataframe.
 #'
 #' @keywords internal
+#' @noRd
 
 ParamToSpecs <- function(PARAM, TimeStart, ErrFlavour)
 {
@@ -121,7 +128,7 @@ ParamToSpecs <- function(PARAM, TimeStart, ErrFlavour)
                         MaxMismatchME = MaxMismatchV["ME"],
                         Tfilter = Tfilter,
                         Tassign = Tassign,
-                        nAgeClasses = nAgeClasses,
+                        #nAgeClasses = nAgeClasses,
                         MaxSibshipSize = MaxSibshipSize,
                         Module = as.character(Module),
                         DummyPrefixFemale = DummyPrefix[1],
@@ -191,29 +198,31 @@ ParamToSpecs <- function(PARAM, TimeStart, ErrFlavour)
 #'   }
 #'
 #' @keywords internal
+#' @noRd
 
 MkFortParams <- function(PARAM, fun="main")
 {
   FP <- list()
   FP$Ng = as.integer(PARAM$dimGeno[1])
+  FP$Nm = as.integer(PARAM$dimGeno[2])
+  #FP$Ny = as.integer(PARAM$nAgeClasses)
   FP$SpecsInt <- with(PARAM,
-                      c(nSnp = dimGeno[2],      # 1
-                        MaxMismatchV,           # 2 - 4
-                        MaxSibshipSize = ifelse(exists("MaxSibshipSize"),
-                                                MaxSibshipSize,
-                                                100),  # 5
-                        Complx = switch(as.character(Complex),       # 6
+                      c(Complx = switch(as.character(Complex),    # 1
                                         mono = 0,
                                         simp = 1,
                                         full = 2),
-                        quiet = ifelse(quiet == "verbose", -1,     # 7 FALSE=0, TRUE=1
-                                       ifelse(quiet == "very", 1,
-                                              as.integer(as.logical(quiet)))),
-                        nAgeCl = nAgeClasses,      # 8
-                        Herm = switch(as.character(Herm),   # 9
+                        Herm = switch(as.character(Herm),         # 2
                                       no = 0,
                                       A = 1,
-                                      B = 2) ))
+                                      B = 2),
+                       quiet = ifelse(quiet == "verbose", -1,     # 3 FALSE=0, TRUE=1
+                                 ifelse(quiet == "very", 1,
+                                    as.integer(as.logical(quiet)))),
+                       MaxSibshipSize = ifelse(exists("MaxSibshipSize"),
+                                                MaxSibshipSize,
+                                                100),             # 4
+                       MaxMismatchV))                             # 5 - 7
+
   FP$SpecsDbl <- as.double(c(PARAM$Tfilter,
                              PARAM$Tassign))
   FP$ErrM <- as.double(PARAM$ErrM)
@@ -255,6 +264,7 @@ MkFortParams <- function(PARAM, fun="main")
 #' @return  Nothing except errors, warnings, and messages
 #'
 #' @keywords internal
+#' @noRd
 
 CheckParams <- function(PARAM)
 {
@@ -300,7 +310,7 @@ CheckParams <- function(PARAM)
 
   chk("MaxMismatchV", "int", n=3)
   chk("MaxSibshipSize", "int")
-  chk("nAgeClasses", "int")
+  #chk("nAgeClasses", "int")
   chk("MaxPairs", "int")
 
   chk("Tfilter", "dbl", allowNeg = TRUE)
@@ -333,6 +343,7 @@ CheckParams <- function(PARAM)
 #' @return AgePrior in corrected format, if necessary
 #'
 #' @keywords internal
+#' @noRd
 
 CheckAP <- function(AgePrior) {
   if (is.null(AgePrior)) {
@@ -385,6 +396,7 @@ CheckAP <- function(AgePrior) {
 #'   (0).
 #'
 #' @keywords internal
+#' @noRd
 
 mtSame2Dif <- function(mtSame = NULL, gID = NULL)
 {

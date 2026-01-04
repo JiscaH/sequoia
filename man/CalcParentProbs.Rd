@@ -81,6 +81,13 @@ when using \code{\link{CalcPairLL}}'s default \code{Module='ped'} and
 Subsetting the genotype data may give different results, as the likelihoods
  and thus the probabilities depend on the allele frequencies in the sample.
 }
+\section{Warning}{
+
+The probabilities will be less reliable with close inbreeding and double
+relationships. This function has not been tested yet with hermaphrodites, and
+is unlikely to give reliable results without further code updates.
+}
+
 \examples{
 test_ped <- Ped_griffin[21:25,]
 # add an incorrect sire to illustrate

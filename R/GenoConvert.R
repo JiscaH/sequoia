@@ -22,7 +22,7 @@
 #'   missing data for \code{InFormat}s 'col' and 'ped' only.
 #' @param sep vector with field separator strings that will be tried on
 #'   \code{InFile}. Ignored if package \pkg{data.table} is present or if
-#'   \code{InFormat='vcf'}. The \code{OutFile} separator uses the
+#'   \code{InFormat='vcf'} or 'vcf.gz'. The \code{OutFile} separator uses the
 #'   \code{\link[utils]{write.table}} default, i.e. one blank space.
 #' @param header a logical value indicating whether the file contains a header
 #'   as its first line. If NA (default), set to TRUE for 'raw', and FALSE
@@ -161,6 +161,7 @@ GenoConvert <- function(InData = NULL,
                         dropcol = NA,
                         quiet = FALSE) {
 
+  if (!(isTRUE(quiet) | isFALSE(quiet)))  stop("'quiet' must be TRUE or FALSE")
   if (is.null(InFile) & is.null(InData)) {
     stop("please provide 'InFile' or 'InData'")
 
@@ -186,16 +187,21 @@ GenoConvert <- function(InData = NULL,
   if (!InFormat %in% c("raw", "seq", "col", "ped", "single", "double", "vcf")) {
     stop("invalid InFormat")
   }
+  InExt <- tools::file_ext(InFile)
+  if (InExt=='gz') {  # allow for .vcf.gz
+    tmp <- tools::file_ext(gsub('.gz','', InFile))
+    if (tmp=='vcf')  InExt <- 'vcf'
+  }
   if (!is.null(InFile)) {
-    for (xx in c('ped', 'vcf', 'raw')) {
-      if (tools::file_ext(InFile) == xx & InFormat != xx) {
+    for (xx in c('ped', 'raw', 'vcf', 'vcf.gz')) {
+      if (InExt == xx & InFormat != xx) {
         if (InFormat == 'raw') {
           InFormat = xx   # change from default
         } else {
           stop("InFormat ", InFormat, " not consistent with file extension .",xx," for InFile")
         }
-      } else if (tools::file_ext(InFile) != xx & InFormat == xx) {
-        stop("File extension ", tools::file_ext(InFile), " not consistent with InFormat ", xx)
+      } else if (InExt != xx & InFormat == xx) {
+        stop("File extension ", InExt, " not consistent with InFormat ", xx)
       }
     }
   }

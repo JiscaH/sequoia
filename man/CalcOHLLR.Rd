@@ -17,6 +17,7 @@ CalcOHLLR(
   Tfilter = -2,
   Complex = "full",
   Herm = "no",
+  useMaxOH = TRUE,
   quiet = FALSE
 )
 }
@@ -25,10 +26,11 @@ CalcOHLLR(
 non-genotyped individuals, which will be treated as dummy individuals. If
 provided, any pedigree in \code{SeqList} is ignored.}
 
-\item{GenoM}{numeric matrix with genotype data: One row per individual,
-one column per SNP, coded as 0, 1, 2, missing values as a negative number
-or NA. You can reformat data with \code{\link{GenoConvert}}, or use other
-packages to get it into a genlight object and then use \code{as.matrix}.}
+\item{GenoM}{numeric matrix with genotype data: One row per individual, one
+column per SNP, coded as 0, 1, 2, missing values as a negative number or
+NA. Row names must be individual IDs, column names are ignored. You can
+reformat data with \code{\link{GenoConvert}}, or use other packages to get
+it into a genlight object and then use \code{as.matrix}.}
 
 \item{CalcLLR}{calculate log-likelihood ratios for all assigned parents
 (genotyped + dummy/non-genotyped; parent vs. otherwise related). If
@@ -107,6 +109,10 @@ non-assignment, but will increase computational time.}
 sire role, default if at least 1 individual with sex=4), or "B" (no
 distinction between dam and sire role). Both of the latter deal with
 selfing.}
+
+\item{useMaxOH}{when calculating likelihoods, skip any parent-offspring pairs
+for which the opposite homozygote count exceeds the maximum, which is
+calculated from the genotyping error rate by \code{\link{CalcMaxMismatch}}.}
 
 \item{quiet}{logical, suppress messages}
 }
@@ -203,8 +209,9 @@ Ped.LLR.B <- CalcOHLLR(Pedigree = Ped_HSg5, GenoM = SimGeno_example,
 SummarySeq(Ped.LLR.B, Panels="LLR")
 
 # run sequoia with CalcLLR=FALSE, and add OH + LLR later:
-SeqOUT <- sequoia(Geno_griffin, LH_griffin, CalcLLR=FALSE,quiet=TRUE,Plot=FALSE)
-PedA <- CalcOHLLR(Pedigree = SeqOUT[["Pedigree"]][, 1:3], GenoM = Genotypes,
+SeqOUT <- sequoia(Geno_griffin, LH_griffin, CalcLLR=FALSE,quiet=TRUE,
+                  Plot=FALSE)
+PedA <- CalcOHLLR(Pedigree = SeqOUT[["Pedigree"]][, 1:3], GenoM=Geno_griffin,
   LifeHistData = LH_griffin, AgePrior = TRUE, Complex = "full")
 SummarySeq(PedA, Panels=c("LLR", "OH"))
 }

@@ -22,10 +22,9 @@ SummarySeq(
 dam - sire. Column names are ignored, as are additional columns, except for
 columns OHdam, OHsire, MEpair, LLRdam, LLRsire, LLRpair (plotting only).}
 
-\item{DumPrefix}{character vector of length 2 with prefixes for dummy dams
-(mothers) and sires (fathers). Will be read from \code{SeqList}'s 'Specs'
-if provided. Used to distinguish between dummies and non-dummies. Length 3
-in case of hermaphrodites.}
+\item{DumPrefix}{character vector with prefixes for dummy dams (mothers) and
+sires (fathers), used to distinguish between dummies and non-dummies. Will
+be read from \code{SeqList}'s 'Specs' if provided.}
 
 \item{SNPd}{character vector with ids of SNP genotyped individuals. Only used
 when \code{Pedigree} is provided instead of \code{SeqList}, to distinguish
@@ -83,14 +82,20 @@ A list with the following elements:
 Number of assigned parents and grandparents and sibship sizes,
   split by genotyped, dummy, and 'observed'.
 }
+\details{
+The list with results is returned \code{\link{invisible}}
+}
 \examples{
 SummarySeq(Ped_griffin)
 sumry_grif <- SummarySeq(SeqOUT_griffin, Panels=c("G.parents", "OH"))
 sumry_grif$PedSummary
 
+# invisible results (nothing printed) when no output object is specified:
+SummarySeq(SeqOUT_griffin, Panels=c("LLR"))
+
 }
 \seealso{
 \code{\link{PlotSeqSum}} to plot the output of this function;
- \code{\link{sequoia}} for pedigree reconstruction and links to other
-  functions.
+  \code{\link{PlotPropAssigned}} for just a barplot of the proportion of
+  individuals with genotyped/dummy/observed/no assigned dam/sire.
 }

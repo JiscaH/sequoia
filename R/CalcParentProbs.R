@@ -68,6 +68,11 @@
 #' \item{Probdam_alt, Probsire_alt}{Probability of most likely alternative
 #'  relationship}
 #'
+#' @section Warning:
+#' The probabilities will be less reliable with close inbreeding and double
+#' relationships. This function has not been tested yet with hermaphrodites, and
+#' is unlikely to give reliable results without further code updates.
+#'
 #' @seealso  \code{\link{CalcPairLL}}, \code{\link{LLtoProb}}
 #'
 #' @examples
@@ -95,7 +100,7 @@ CalcParentProbs <- function(Pedigree = NULL, GenoM = NULL, quiet = FALSE, nCores
 {
   #=========================
   # input checks ----
-  if (!quiet %in% c(TRUE, FALSE))  stop("'quiet' must be TRUE or FALSE")
+  if (!(isTRUE(quiet) | isFALSE(quiet)))  stop("'quiet' must be TRUE or FALSE")
 
   ## check genotype data ----
   GenoM <- CheckGeno(GenoM, quiet=TRUE, Plot=FALSE)
@@ -267,7 +272,7 @@ CalcParentProbs <- function(Pedigree = NULL, GenoM = NULL, quiet = FALSE, nCores
 #' @description transform a vector with log10 likelihoods to a vector with
 #'  probabilities summing to one.
 #'
-#'  @details The returned probabilities are calculated from the likelihoods used
+#' @details The returned probabilities are calculated from the likelihoods used
 #'   throughout the rest of this package, by scaling them to sum to one across
 #'   all possible relationships. For \code{Complex='simp'} these are
 #'   PO=parent-offspring, FS=full siblings, HS=half siblings, GP=grand-parental,
@@ -291,8 +296,11 @@ CalcParentProbs <- function(Pedigree = NULL, GenoM = NULL, quiet = FALSE, nCores
 #' LL_pairs <- CalcPairLL(data.frame(ID1='i042_2003_F',
 #'                          ID2=c('i015_2001_F', 'i022_2002_F', 'i035_2002_F')),
 #'                   GenoM = Geno_griffin, Complex='simp', Err=1e-3, Plot=FALSE)
+#' prob_pairs <- t(apply(LL_pairs[,10:16], MARGIN=1, LLtoProb))
+#' # - or -
 #' prob_pairs <- plyr::aaply(as.matrix(LL_pairs[,10:16]), .margin=1, LLtoProb)
 #' round(prob_pairs, 3)
+#'
 #' # i035_2002_F is MHS of i042_2003_F, but when not conditioning on any other
 #' # relatives has a higher LL to be 3rd degree relative (HA)
 #' # (possibly genotyping errors, or just randomness of Mendelian inheritance)
@@ -347,7 +355,8 @@ LLtoProb <- function(LLv)   # vector with likelihoods
 #'   \item{.}{U \eqn{\rightarrow} U}
 #'   \item{.}{PO \eqn{\rightarrow} DUP (only if 'DUP' already among column names)}
 #'
-#' @keywords internal
+#' @keywords internal  
+#' @noRd
 
 ReOrderDums <- function(LLM, Complex='full')
 {

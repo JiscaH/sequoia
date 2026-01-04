@@ -47,9 +47,14 @@
 #'
 #' @examples
 #' CalcMaxMismatch(Err = 0.05, MAF = runif(n=100, min=0.3, max=0.5))
-#' \dontrun{
-#' CalcMaxMismatch(Err = 0.02, MAF = SnpStats(MyGenoMatrix, Plot=FALSE)[,"AF"])
-#' }
+#'
+#' # in sequoia() qntl depends on the number of genotyped individuals, to get an
+#' # approximately constant false exclusion rate at dataset-level
+#' sts <- SnpStats(Geno_griffin, Plot=FALSE, quiet=TRUE, calc_HWE=FALSE)
+#' MAF <- ifelse(sts[,'AF'] < 0.5, sts[,'AF'], 1-sts[,'AF'])
+#' sequoia::CalcMaxMismatch(Err = 0.001,
+#'                          MAF = MAF,
+#'                          qntl = 0.9999^(1/nrow(Geno_griffin)))
 #'
 #' @export
 

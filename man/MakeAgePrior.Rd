@@ -90,8 +90,9 @@ A matrix with the probability ratio of the age difference between two
   being a certain type of relative conditional on the age difference, versus
   being a random draw.
 
-  The matrix has one row per age difference (0 - nAgeClasses) and five
-  columns, one for each relationship type, with abbreviations:
+  The matrix has one row per age difference (from zero up to
+  max(\code{MaxAgeParent})+1) and five columns, one for each relationship
+  type, with abbreviations:
   \item{M}{Mothers}
   \item{P}{Fathers}
   \item{FS}{Full siblings}

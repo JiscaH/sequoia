@@ -20,10 +20,11 @@
 #'   provided in the vignettes and on the package website,
 #'   https://jiscah.github.io/index.html .
 #'
-#' @param GenoM  numeric matrix with genotype data: One row per individual,
-#'   one column per SNP, coded as 0, 1, 2, missing values as a negative number
-#'   or NA. You can reformat data with \code{\link{GenoConvert}}, or use other
-#'   packages to get it into a genlight object and then use \code{as.matrix}.
+#' @param GenoM  numeric matrix with genotype data: One row per individual, one
+#'   column per SNP, coded as 0, 1, 2, missing values as a negative number or
+#'   NA. Row names must be individual IDs, column names are ignored. You can
+#'   reformat data with \code{\link{GenoConvert}}, or use other packages to get
+#'   it into a genlight object and then use \code{as.matrix}.
 #' @param LifeHistData data.frame with up to 6 columns:
 #'  \describe{
 #'  \item{ID}{max. 30 characters long}
@@ -97,11 +98,13 @@
 #' @param args.AP list with arguments to be passed on to
 #'   \code{\link{MakeAgePrior}}, e.g. `Discrete` (non-overlapping generations),
 #'   `MinAgeParent`, `MaxAgeParent`.
-#' @param mtSame  \strong{NEW} matrix indicating whether individuals (might)
-#'   have the same mitochondrial haplotype (1), and may thus be matrilineal
-#'   relatives, or not (0). Row names and column names should match IDs in
-#'   `GenoM`. Not all individuals need to be included and order is not
-#'   important. Please report any issues. For details see the mtDNA vignette.
+#' @param mtSame  matrix indicating whether individuals (might) have the same
+#'   mitochondrial haplotype (1), and may thus be matrilineal relatives, or not
+#'   (0). This potentially be useful to distinguish between maternal and
+#'   paternal half siblings when few parents are genotyped, or between maternal
+#'   and paternal parents when their sex(role) is unknown. Row names and column
+#'   names should match IDs in `GenoM`. Not all individuals need to be included
+#'   and order is not important. For details see the mtDNA vignette.
 #' @param CalcLLR  TRUE/FALSE; calculate log-likelihood ratios for all assigned
 #'   parents (genotyped + dummy; parent vs. otherwise related). Time-consuming
 #'   in large datasets. Can be done separately with \code{\link{CalcOHLLR}}.
@@ -162,7 +165,9 @@
 #' \item{Pedigree}{Dataframe with assigned genotyped and dummy parents from
 #'   Sibship step; entries for dummy individuals are added at the bottom.}
 #' \item{PedigreePar}{Dataframe with assigned parents from Parentage step.}
-#' \item{Specs}{Named vector with parameter values.}
+#' \item{Specs}{Named vector with parameter values. This includes the maximum
+#'   OH for potential (parent-)parent-offspring pairs (trios), which is
+#'   calculated by \code{\link{CalcMaxMismatch}}}
 #' \item{TotLikParents}{Numeric vector, Total likelihood of the genotype data
 #'   at initiation and after each iteration during Parentage.}
 #' \item{TotLikSib}{Numeric vector, Total likelihood of the genotype data
@@ -260,23 +265,27 @@
 #'   \item \code{\link{GenoConvert}} to read in various data formats,
 #'   \item \code{\link{CheckGeno}}, \code{\link{SnpStats}} to calculate
 #'     missingness and allele frequencies,
-#'   \item \code{\link{SimGeno}}  to simulate SNP data from a pedigree,
-#'   \item \code{\link{MakeAgePrior}} to estimate effect of age on relationships,
+#'   \item \code{\link{SimGeno}} to simulate SNP data from a pedigree,
+#'   \item \code{\link{MakeAgePrior}} to estimate effect of age on relationships
+#'    and \code{\link{PlotAgePrior}} to visualise those,
+#'   \item \code{\link{SummarySeq}} and \code{\link{PlotPropAssigned}} to
+#'   visualise results,
 #'   \item \code{\link{GetMaybeRel}} to find pairs of potential relatives,
-#'   \item \code{\link{SummarySeq}} and \code{\link{PlotAgePrior}} to visualise
-#'   results,
 #'   \item \code{\link{GetRelM}} to turn a pedigree into pairwise relationships,
-#'   \item \code{\link{CalcOHLLR}} to calculate Mendelian errors and LLR for any
-#'    pedigree,
+#'   \item \code{\link{CountOH}}, \code{\link{CalcPairLL}} and
+#'     \code{\link{LLtoProb}} for specified pairs of individuals respectively
+#'     count Opposing Homozygous SNPs, calculate likelihoods of various
+#'   relationships, and transform those likelihoods to probabilities,
+#'   \item \code{\link{CalcOHLLR}} to count Opposing Homozygous SNPs and
+#'   calculate LLR for all parent-offspring pairs in any pedigree,
 #'   \item \code{\link{CalcParentProbs}} to calculate assignment probabilities
-#'   instead of LLRs,
-#'   \item \code{\link{CalcPairLL}} for likelihoods of various relationships
-#'    between specific pairs,
+#'   (instead of LLRs) in any pedigree,
 #'   \item \code{\link{CalcBYprobs}} to estimate birth years,
-#'   \item \code{\link{PedCompare}} and \code{\link{ComparePairs}} to compare to
+#'   \item \code{\link{PedCompare}} and \code{\link{ComparePairs}} to compare
 #'   two pedigrees,
 #'   \item \code{\link{EstConf}} to estimate assignment errors,
-#'   \item \code{\link{writeSeq}} to save results,
+#'   \item \code{\link{writeSeq}} to save \code{sequoia} output as text or excel
+#'   files,
 #'   \item \code{vignette("sequoia")} for detailed manual & FAQ.
 #' }
 #'
@@ -372,7 +381,7 @@ sequoia <- function(GenoM = NULL,
   TimeStart <- Sys.time()
 
   # set quiet & Plot ----
-  if (!quiet %in% c(TRUE, FALSE, "verbose"))
+  if (!(isTRUE(quiet) | isFALSE(quiet) | quiet=='verbose'))
     stop("'quiet' must be TRUE or FALSE or 'verbose'")
   quietR <- ifelse(quiet == "verbose", FALSE, quiet)  # 'verbose' determines chattiness of Fortran only
   if (is.null(Plot))   # default
@@ -385,7 +394,8 @@ sequoia <- function(GenoM = NULL,
     stop("`SeqList` must be a list or `NULL`")
 
   if (!is.null(SeqList)) {
-    SeqList_names <- c("Specs", "ErrM", "args.AP", "AgePriors", "LifeHist","PedigreePar")
+    SeqList_names <- c("Specs", "ErrM", "args.AP", "AgePriors", "LifeHist",
+                       "PedigreePar", "DupGenotype")
     if (!any(names(SeqList) %in% SeqList_names) | any(is.na(names(SeqList))) ) {
       cli::cli_alert_danger("You seem to have misspelled one or more names of elements of `SeqList`:")
       cli::cli_li(setdiff(names(SeqList), SeqList_names))
@@ -491,7 +501,7 @@ sequoia <- function(GenoM = NULL,
                        ErrFlavour,
                        Tfilter,
                        Tassign,
-                       nAgeClasses = nrow(AgePriors),
+                       #nAgeClasses = nrow(AgePriors),
                        MaxSibshipSize,
                        Module = as.character(Module),
                        DummyPrefix,
@@ -613,10 +623,10 @@ sequoia <- function(GenoM = NULL,
     if(!quietR)  cli::cli_alert_info("using `AgePriors` in `SeqList` again")
   }
 
-  if (nrow(AgePriors) != PARAM$nAgeClasses) {
-    PARAM$nAgeClasses <- nrow(AgePriors)
-    FortPARAM$SpecsInt[["nAgeCl"]] <- nrow(AgePriors)
-  }
+  #if (nrow(AgePriors) != PARAM$nAgeClasses) {
+  #  PARAM$nAgeClasses <- nrow(AgePriors)
+  #  FortPARAM$SpecsInt[["nAgeCl"]] <- nrow(AgePriors)
+  #}
 
 
   # @@ 4 @@ Full pedigree reconstruction ----

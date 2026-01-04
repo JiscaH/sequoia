@@ -80,6 +80,8 @@ CheckGeno <- function(GenoM, quiet=FALSE, Plot=FALSE,
                       Return="GenoM", Strict=TRUE, DumPrefix = c("F0", "M0"))
 {
 
+  if (!(isTRUE(quiet) | isFALSE(quiet)))  stop("'quiet' must be TRUE or FALSE")
+
   # basic checks ----
   if (is.null(GenoM)) stop("please provide 'GenoM'")
   if (!is.matrix(GenoM)) stop("'GenoM' should be a numeric matrix")

@@ -50,10 +50,11 @@ of ID1 were unknown.}
 \item{dropPar2}{as \code{dropPar1}, for \code{ID2}}
 }}
 
-\item{GenoM}{numeric matrix with genotype data: One row per individual,
-one column per SNP, coded as 0, 1, 2, missing values as a negative number
-or NA. You can reformat data with \code{\link{GenoConvert}}, or use other
-packages to get it into a genlight object and then use \code{as.matrix}.}
+\item{GenoM}{numeric matrix with genotype data: One row per individual, one
+column per SNP, coded as 0, 1, 2, missing values as a negative number or
+NA. Row names must be individual IDs, column names are ignored. You can
+reformat data with \code{\link{GenoConvert}}, or use other packages to get
+it into a genlight object and then use \code{as.matrix}.}
 
 \item{Pedigree}{dataframe with columns id-dam-sire; likelihoods will be
 calculated conditional on the pedigree. May include non-genotyped
@@ -179,8 +180,14 @@ For each specified pair of individuals, calculate the
   log10-likelihoods of being PO, FS, HS, GP, FA, HA, U (see Details).
   Individuals must be genotyped or have at least one genotyped offspring.
 
-  \strong{NOTE} values \eqn{>0} are various \code{NA} types, see 'Likelihood
+  \strong{NOTE:} values \eqn{>0} are various \code{NA} types, see 'Likelihood
   special codes' in 'Value' section below.
+
+  \strong{NOTE 2:} Relationship between a dummy/non-genotyped individual
+  and another are expressed as relationships with \emph{that dummies
+  offspring}. So, if e.g. ID1=F0001 and ID2=i003_2001_M, and TopRel=FA, that
+  means that dummy female F0001 is likely a full sibling of i003_2001_M.
+  For further details see below.
 }
 \details{
 The same pair may be included multiple times, e.g. with different
@@ -256,11 +263,11 @@ The same pair may be included multiple times, e.g. with different
 
   For historical reasons, the relationships between a dummy ID1 and ID2 are
   reported *between the sibship and ID2*. So,
-  \describe{
- \item{PO}{ID2 replaces dummy ID1; or merge dummy ID2 with dummy ID1}
- \item{FS, HS}{ID1 parent of ID2}
- \item{GP}{ID2 parent of ID1}
- \item{FA,HA}{ID2 FS resp. HS of ID1} }
+ \itemize{
+ \item{\code{PO}: ID2 replaces dummy ID1; or merge dummy ID2 with dummy ID1}
+ \item{\code{FS, HS}: ID1 parent of ID2}
+ \item{\code{GP}: ID2 parent of ID1}
+ \item{\code{FA,HA}: ID2 FS resp. HS of ID1} }
  If ID1 is genotyped and ID2 is a dummy, the relationships are as when ID2 is
  genotyped.
 

@@ -92,7 +92,7 @@ CalcBYprobs <- function(Pedigree = NULL,
   if (BYzero == Inf)  stop("Need at least 1 birthyear in LifeHistData")
 
   MaxAgePO <- max(which(AP[,1] > 0), which(AP[,2] > 0)) -1   # row1 = agediff of 0
-  BYzero <- BYzero - MaxAgePO +1
+  BYzero <- BYzero - MaxAgePO #+1
   if ((BYlast - BYzero) < 2*MaxAgePO | BYlast==0) {
     BYzero <- BYzero - MaxAgePO    # dummy parents + real grandparents w unknown BY
   }
@@ -106,7 +106,7 @@ CalcBYprobs <- function(Pedigree = NULL,
   TMP <- .Fortran(getbyprobs,
                   ng = as.integer(Ng),
                   nx = as.integer(NumNoBY),
-                  nap = as.integer(nrow(AP)),
+                  ny = as.integer(nrow(AP)),
                   nYearsIn = as.integer(nYears),
                   byrf = as.integer(c(LHF[['BirthYear']], LHF[['BY.min']], LHF[['BY.max']])),
                   lyrf = as.integer(LHF[['Year.last']]),

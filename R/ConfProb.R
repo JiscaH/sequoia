@@ -221,7 +221,8 @@ EstConf <- function(Pedigree = NULL,
   if (!is.wholenumber(nSim) || nSim<1 || length(nSim)>1)
     stop("nSim must be a single positive number")
 
-  if (!quiet %in% c(TRUE, FALSE, "very"))  stop("'quiet' must be TRUE, FALSE, or 'very'")
+  if (!(isTRUE(quiet) | isFALSE(quiet) | quiet=='very'))
+    stop("'quiet' must be TRUE, FALSE, or 'very'")
   quiet.EC <- ifelse(quiet == "very", TRUE, FALSE)
   quiet <- ifelse(quiet %in% c("very", TRUE), TRUE, FALSE)
   if (!"quiet" %in% names(args.sim))  args.sim <- c(args.sim, list(quiet = quiet))
@@ -395,7 +396,8 @@ EstConf <- function(Pedigree = NULL,
 # parent in the reference pedigree).  This function is called by EstConf(),
 # which combines its result across multiple inferred pedigrees.
 
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 Count_conf <- function(Ped.inferred, Ped.ref, SNPd) {
 
@@ -431,7 +433,8 @@ Count_conf <- function(Ped.inferred, Ped.ref, SNPd) {
 
 # take list of outputs from Count_conf(), calculate proportions, output as dataframe
 
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 Counts2Conf <- function(countsL) {
 

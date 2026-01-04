@@ -12,7 +12,7 @@
 #'   \code{ParamToSpecs}.
 #' @param GenoM matrix with genotype data, size nInd x nSnp.
 #' @param LhIN  life history data: ID - sex - birth year.
-#' @param AgePriors matrix with agepriors, size `FortPARAM["nAgeClasses"]` by 8.
+#' @param AgePriors matrix with agepriors, 5 columns (M/P/FS/MHS/PHS)
 #' @param Parents  matrix with rownumbers of assigned parents, size nInd by 2.
 #' @param mtDif matrix indicating whether individuals have definitely a
 #'   different mitochondrial haplotype (1), or (possibly) the same (0). Size
@@ -35,6 +35,7 @@
 #' @useDynLib sequoia, .registration = TRUE
 #'
 #' @keywords internal
+#' @noRd
 
 SeqParSib <- function(ParSib,
                       FortPARAM,
@@ -52,7 +53,7 @@ SeqParSib <- function(ParSib,
   gID <- rownames(GenoM)
   LHF <- orderLH(LhIN, gID)
   PedN <- PedToNum(Parents, gID, DoDummies = "no")
-  MaxMaxAgePO <- 100  # if changed, change in Fortran too!
+  Ny <- nrow(AgePriors)
 
   SpecsIntMkPed <- c(switch(ParSib,
                             par = 1,
@@ -62,6 +63,8 @@ SeqParSib <- function(ParSib,
   TMP <- .Fortran(makeped,
                   # IN:
                   ng = as.integer(Ng),   # no. genotyped individuals
+                  nm = as.integer(ncol(GenoM)),
+                  ny = as.integer(Ny),
                   specsintglb = as.integer(FortPARAM$SpecsInt),
                   specsintmkped = as.integer(SpecsIntMkPed),
                   specsdbl = as.double(FortPARAM$SpecsDbl),
@@ -82,7 +85,7 @@ SeqParSib <- function(ParSib,
                   dumlrrf = double(3*Ng),
                   dumbyrf = integer(3*Ng),
                   totll = double(42),
-                  apout = double((3*MaxMaxAgePO)*5*3))
+                  apout = double((3*Ny+1)*5*3))
   #                  PACKAGE = "sequoia")
 
   TMP$lrrf[abs(TMP$lrrf - 999) < 0.1] <- NA
@@ -108,22 +111,25 @@ SeqParSib <- function(ParSib,
 
   # parents of dummies
   if (grepl("sib", ParSib) && any(TMP$nd>0)) {
+    wHerm <- any(NumPed$dam < -1e6)   # pedigree includes hermaphrodite dummies
     NgOdd <- Ng%%2==1
     DumPed <- data.frame(id = -c(seq_len(TMP$nd[1]), seq_len(TMP$nd[2])),
                          VtoM(TMP$dumparrf, sum(TMP$nd), 2, NgOdd),
                          VtoM(TMP$dumlrrf, sum(TMP$nd), 3, NgOdd),
                          OHdam = NA, OHsire = NA, MEpair = NA,
                          Sex = rep(1:2, TMP$nd),
+                         VtoM(TMP$dumbyrf, sum(TMP$nd),3, NgOdd),   # here in case of herm
                          stringsAsFactors=FALSE)
-    names(DumPed) <- PedColNames
-
-    if (any(NumPed$dam < -1e6)) {   # hermaphrodite dummies
-      IsHermDumDam <- with(DumPed, id %in% (NumPed$dam + 1e6) & Sex==1)
-      DumPed$id[IsHermDumDam] <- DumPed$id[IsHermDumDam] - 1e6
-      IsHermDumSire <- with(DumPed, (!id %in% NumPed$sire) & Sex==2)
-      DumPed <- DumPed[!IsHermDumSire, ]
+    names(DumPed) <- c(PedColNames, c("BY.est", "BY.lo", "BY.hi"))
+    if (wHerm) {
+      is_dummy_herm <- with(DumPed, Sex==1 & !id %in% NumPed$dam & id-1e6 %in% NumPed$dam)
+      is_herm_clone <- with(DumPed, Sex==2 & !id %in% NumPed$sire)
+      DumPed$Sex[is_dummy_herm] <- 4
+      DumPed$id[is_dummy_herm] <- DumPed$id[is_dummy_herm] -1e6
+      DumPed <- DumPed[!is_herm_clone, ]  # these 'dummy clones' have the female dummy ID
     }
-    NumPed <- rbind(NumPed, DumPed)
+
+    NumPed <- rbind(NumPed, DumPed[,1:10])
   }
 
   # numeric to character IDs
@@ -131,31 +137,45 @@ SeqParSib <- function(ParSib,
   Pedigree[,"id"] <- NumToID(Pedigree[,"id"], k = Pedigree[,"Sex"], gID, DumPfx)
   for (k in 1:2) Pedigree[, k+1] <- NumToID(Pedigree[, k+1], k, gID, DumPfx)
 
+
   #=========================
   # all info for each dummy
   if (grepl("sib", ParSib) && any(TMP$nd>0)) {
+    # Number of offspring per dummy parent
     NumOff <- list("mat" = table(Pedigree$dam[NumPed$dam < 0]),
                    "pat" = table(Pedigree$sire[NumPed$sire < 0]))
+    if (wHerm) {
+      # NOTE: selfing counts as 2 offspring
+      tbl1 <- table(Pedigree$dam[NumPed$dam < -1e6])
+      tbl2 <- table(Pedigree$sire[NumPed$sire < -1e6])
+      herm_ids <- union(names(tbl1), names(tbl2))
+      NumOff[['herm']] = apply(cbind(tbl1[herm_ids], tbl2[herm_ids]), 1, sum, na.rm=TRUE)
+      for (k in 1:2)  NumOff[[k]] <- NumOff[[k]][!names(NumOff[[k]]) %in% herm_ids]
+    }
     MaxOff <- max(unlist(NumOff))
 
+    # IDs of all offspring per dummy, including dummy offspring
     OffIDs <- c(plyr::dlply(Pedigree, "dam", function(df) df$id),
                 plyr::dlply(Pedigree, "sire", function(df) df$id))
-    OffIDs <- OffIDs[c(names(NumOff[[1]]), names(NumOff[[2]]))]
-    # includes dummy offspring
+    if (wHerm) {
+      OffIDs <- OffIDs[c(names(NumOff[[1]]), names(NumOff[[2]]), herm_ids)]
+    } else {
+      OffIDs <- OffIDs[c(names(NumOff[[1]]), names(NumOff[[2]]))]
+    }
 
-    DummyIDs <- plyr::join(data.frame(id = c(names(NumOff[["mat"]]),
-                                             names(NumOff[["pat"]])),
-                                      stringsAsFactors=FALSE),
+    DummyIDs <- plyr::join(data.frame(id = unlist(plyr::llply(NumOff, function(v) names(v)))),
                            Pedigree[, c("id", "dam", "sire")],
                            by="id")
+    DumPed$id <- NumToID(DumPed[,"id"], k = DumPed[,"Sex"], gID, DumPfx)
+    DummyIDs <- plyr::join(DummyIDs,
+                           DumPed[, c("id", "Sex", "BY.est", "BY.lo", "BY.hi")],
+                           by='id')
     DummyIDs <- cbind(DummyIDs,
-                      Sex = rep(1:2, times=TMP$nd),
-                      VtoM(TMP$dumbyrf, sum(TMP$nd),3, NgOdd),
                       unlist(NumOff),
                       plyr::laply(OffIDs, .fun = function(x) x[1:MaxOff], .drop=FALSE),
                       row.names=NULL)
-    names(DummyIDs)[5:ncol(DummyIDs)] <- c("BY.est", "BY.lo", "BY.hi", "NumOff",
-                                           paste0("O", 1:MaxOff))
+    names(DummyIDs)[8:ncol(DummyIDs)] <- c("NumOff", paste0("O", 1:MaxOff))
+
   } else  DummyIDs <- NULL
 
   Pedigree <- Pedigree[, colnames(Pedigree)!="Sex"]
@@ -187,7 +207,7 @@ SeqParSib <- function(ParSib,
                       BY.lo = TMP$byrf[1:Ng + Ng],
                       BY.hi = TMP$byrf[1:Ng + 2*Ng],
                       stringsAsFactors = FALSE)
-  LhOUT$BY.est[LhOUT$BY.est < 0] <- NA
+  LhOUT$BY.est[LhOUT$BY.est==-999] <- NA
   names(LhOUT)[names(LhOUT)=="ID"] <- "id"
 
   #=========================
@@ -209,7 +229,7 @@ SeqParSib <- function(ParSib,
   if (grepl("par", ParSib)) {
     OUT <- list(PedigreePar = Pedigree,
                 TotLikPar = TotLik,
-  #              AgePriorExtra = APM,  confusing: calculated at start of run
+                # AgePriorExtra = APM,  confusing: calculated at start of run
                 LifeHistPar = LhOUT)
 
   } else if (grepl("sib", ParSib)) {

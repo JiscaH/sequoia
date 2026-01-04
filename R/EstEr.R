@@ -53,7 +53,8 @@
 #'                 ParMis=0.1, CallRate=0.9)
 #' # EstEr(GenoM=GenoX, Pedigree=Ped_griffin)
 #'
-#' @export
+#' @keywords internal 
+#' @noRd
 
 EstEr <- function(GenoM, Pedigree, Duplicates=NULL, Er_start=c(.05,.05,.05),
                   perSNP=FALSE)

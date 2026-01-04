@@ -510,7 +510,8 @@ PedCompare <- function(Ped1 = NULL,
 #'   Infrd but not Simld ('err'), and the number occuring in Simld but not
 #'   Infrd ('missed').
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 Vcomp <- function(Infrd, Simld, SNPd)
 {
@@ -533,7 +534,8 @@ Vcomp <- function(Infrd, Simld, SNPd)
 #'   this best match ('Tot'), the number of matching IDs ('OK'), and the
 #'   number of mismatches ('err').
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 SibMatch <- function(SimX, Infrd, SNPd)
 {

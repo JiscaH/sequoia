@@ -86,7 +86,8 @@ is.wholenumber <- function(x, tol = .Machine$double.eps^0.5) {
 #'   except where df2 has NA.
 #' @param ...  additional arguments to merge, such as \code{all}.
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 MergeFill <- function(df1, df2, by, overwrite=FALSE, ...) {
   commonNames <- names(df1)[which(colnames(df1) %in% colnames(df2))]
@@ -193,7 +194,8 @@ XtoM <- function(V, nr=NULL, nc=2, Ng_odd=FALSE) {
 ##' @author Martin Maechler;
 ##' Copyright (C) 2010-2012  The R Core Team
 ##'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 tryCatch.W.E <- function(expr)
 {

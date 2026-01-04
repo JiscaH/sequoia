@@ -15,8 +15,9 @@ a vector with probabilities, with the same length and names.
 \description{
 transform a vector with log10 likelihoods to a vector with
  probabilities summing to one.
-
- @details The returned probabilities are calculated from the likelihoods used
+}
+\details{
+The returned probabilities are calculated from the likelihoods used
   throughout the rest of this package, by scaling them to sum to one across
   all possible relationships. For \code{Complex='simp'} these are
   PO=parent-offspring, FS=full siblings, HS=half siblings, GP=grand-parental,
@@ -36,8 +37,11 @@ U=unrelated. For \code{Complex='full'} there are numerous double relationship
 LL_pairs <- CalcPairLL(data.frame(ID1='i042_2003_F',
                          ID2=c('i015_2001_F', 'i022_2002_F', 'i035_2002_F')),
                   GenoM = Geno_griffin, Complex='simp', Err=1e-3, Plot=FALSE)
+prob_pairs <- t(apply(LL_pairs[,10:16], MARGIN=1, LLtoProb))
+# - or -
 prob_pairs <- plyr::aaply(as.matrix(LL_pairs[,10:16]), .margin=1, LLtoProb)
 round(prob_pairs, 3)
+
 # i035_2002_F is MHS of i042_2003_F, but when not conditioning on any other
 # relatives has a higher LL to be 3rd degree relative (HA)
 # (possibly genotyping errors, or just randomness of Mendelian inheritance)

@@ -150,6 +150,7 @@ GetMaybeRel <- function(GenoM = NULL,
   on.exit(.Fortran(deallocall), add=TRUE)
 
   if (!Module %in% c("par", "ped"))  stop("'Module' must be 'par' or 'ped'")
+  if (!(isTRUE(quiet) | isFALSE(quiet)))  stop("'quiet' must be TRUE or FALSE")
   if(!quiet)  cli::cli_alert_info(paste0("Searching for non-assigned ",
                       c(par="parent-offspring", ped="relative")[Module], " pairs ...",
                       " (Module = ", Module, ")"))
@@ -211,7 +212,7 @@ GetMaybeRel <- function(GenoM = NULL,
                        ErrFlavour,
                        Tfilter,
                        Tassign,
-                       nAgeClasses = nrow(AgePrior),
+                       #nAgeClasses = nrow(AgePrior),
                        MaxSibshipSize = max(table(Pedigree$dam), table(Pedigree$sire), 90,
                                             na.rm=TRUE) +10,
                        Module = as.character(Module),
@@ -256,6 +257,8 @@ GetMaybeRel <- function(GenoM = NULL,
 
   TMP <- .Fortran(findambig,
                   ng = as.integer(Ng),
+                  nm = as.integer(ncol(GenoM)),
+                  ny = as.integer(nrow(AgePrior)),
                   specsint = as.integer(FortPARAM$SpecsInt),
                   specsintamb = as.integer(FortPARAM$SpecsIntAmb),
                   specsdbl = as.double(FortPARAM$SpecsDbl),

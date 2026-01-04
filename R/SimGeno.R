@@ -164,6 +164,7 @@ SimGeno <- function(Pedigree,
                     quiet = FALSE)
 {
   if (missing(Pedigree)) stop("please provide a pedigree to simulate from")
+  if (!(isTRUE(quiet) | isFALSE(quiet)))  stop("'quiet' must be TRUE or FALSE")
 
   # unavoidable partial matching when 'Err' is specified instead of 'SnpError'
   if (is.numeric(ErrorFV)) {
@@ -441,7 +442,8 @@ MkGenoErrors <- function(SGeno,
 #'
 #' @useDynLib sequoia, .registration = TRUE
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 DoErrors <- function(SGeno, Act2Obs) {
   dnames <- dimnames(SGeno)
@@ -470,7 +472,8 @@ DoErrors <- function(SGeno, Act2Obs) {
 #'
 #' @return vector with genotype matrix row numbers of non-sampled individuals
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 SelectNotSampled <- function(Ped, ParMis) {
   if (length(na.exclude(intersect(Ped[,2], Ped[,3]))) >0) {

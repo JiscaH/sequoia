@@ -55,6 +55,9 @@
 #'   except 'CalcLLR' and 'AgePriors=FALSE'. The list elements  `LifeHist',
 #'   `AgePriors', and `ErrM' are also used if present, and override the
 #'   corresponding input parameters.
+#' @param useMaxOH when calculating likelihoods, skip any parent-offspring pairs
+#'  for which the opposite homozygote count exceeds the maximum, which is
+#'  calculated from the genotyping error rate by \code{\link{CalcMaxMismatch}}.
 #' @param quiet logical, suppress messages
 #' @inheritParams sequoia
 #'
@@ -130,8 +133,9 @@
 #' SummarySeq(Ped.LLR.B, Panels="LLR")
 #'
 #' # run sequoia with CalcLLR=FALSE, and add OH + LLR later:
-#' SeqOUT <- sequoia(Geno_griffin, LH_griffin, CalcLLR=FALSE,quiet=TRUE,Plot=FALSE)
-#' PedA <- CalcOHLLR(Pedigree = SeqOUT[["Pedigree"]][, 1:3], GenoM = Genotypes,
+#' SeqOUT <- sequoia(Geno_griffin, LH_griffin, CalcLLR=FALSE,quiet=TRUE,
+#'                   Plot=FALSE)
+#' PedA <- CalcOHLLR(Pedigree = SeqOUT[["Pedigree"]][, 1:3], GenoM=Geno_griffin,
 #'   LifeHistData = LH_griffin, AgePrior = TRUE, Complex = "full")
 #' SummarySeq(PedA, Panels=c("LLR", "OH"))
 #' }
@@ -152,10 +156,12 @@ CalcOHLLR <- function(Pedigree = NULL,
                       Tfilter = -2.0,
                       Complex = "full",
                       Herm = "no",
+                      useMaxOH = TRUE,
                       quiet = FALSE)
 {
 
   on.exit(.Fortran(deallocall), add=TRUE)
+  if (!(isTRUE(quiet) | isFALSE(quiet)))  stop("'quiet' must be TRUE or FALSE")
 
   # check genotype data ----
   GenoM <- CheckGeno(GenoM, quiet=TRUE, Plot=FALSE)
@@ -218,7 +224,7 @@ CalcOHLLR <- function(Pedigree = NULL,
                        ErrFlavour,
                        Tfilter,
                        Tassign,
-                       nAgeClasses = nrow(AP),
+                       #nAgeClasses = nrow(AP),
                        MaxSibshipSize = max(table(Ped$dam), table(Ped$sire), 90,
                                             na.rm=TRUE) +10,
                        Complex,
@@ -230,12 +236,16 @@ CalcOHLLR <- function(Pedigree = NULL,
   # MaxMismatch ----
   # vector with max. mismatches for duplicates, PO pairs, PPO trios
   if (!"MaxMismatchV" %in% names(PARAM)) {  # DUP/OH/ME from version 2.0 onwards
-    sts <- SnpStats(GenoM, Plot=FALSE)
-    PARAM$MaxMismatchV <- setNames(CalcMaxMismatch(Err=PARAM$ErrM,
-                                                   MAF=sts[,"AF"],
-                                                   ErrFlavour=PARAM$ErrFlavour,
-                                                   qntl=0.9999^(1/nrow(GenoM))),
-                                   c("DUP", "OH", "ME"))
+    if (useMaxOH) {
+      sts <- SnpStats(GenoM, Plot=FALSE)
+      PARAM$MaxMismatchV <- setNames(CalcMaxMismatch(Err=PARAM$ErrM,
+                                                     MAF=sts[,"AF"],
+                                                     ErrFlavour=PARAM$ErrFlavour,
+                                                     qntl=0.9999^(1/nrow(GenoM))),
+                                     c("DUP", "OH", "ME"))
+    } else {
+      PARAM$MaxMismatchV <- c('DUP'=ncol(GenoM), 'OH'=ncol(GenoM), 'ME'=ncol(GenoM))  # = number of SNPs
+    }
   }
 
   # check parameter values ----
@@ -259,6 +269,8 @@ CalcOHLLR <- function(Pedigree = NULL,
 
   TMP <- .Fortran(getpedllr,
                   ng = as.integer(Ng),
+                  nm = as.integer(ncol(GenoM)),
+                  ny = as.integer(nrow(AP)),
                   specsint = as.integer(FortPARAM$SpecsInt),
                   specsintmkped = as.integer(FortPARAM$SpecsIntMkPed),
                   specsdbl = as.double(FortPARAM$SpecsDbl),

@@ -1,3 +1,28 @@
+# sequoia 3.2
+- allow .vcf.gz as input for `GenoConvert`
+- fix `which.min` applied to data.frame rows (no longer allowed) by adding `as.matrix`
+- fix various issues affecting performance with hermaphrodites
+- fix SeqOUT$DummyIDs output for hermaphrodite dummies
+- hide documentation of internal functions
+
+
+# sequoia 3.1.3
+- add function `PlotPropAssigned`
+
+
+# sequoia 3.1.2
+- fix bug that disallowed sibship clustering among candidate parents in discrete 
+2 generation offspring + candidate parents datasets.
+- add function `CountOH`
+
+
+# sequoia 3.1
+- allow for age differences >100
+- fix bug in `PedToNum` when called by `CalcPairLL` without pedigree
+- `CalcPairLL`: when 'patmat' not specified, now always defaults to 'sex2', not
+ only when focal=PO. 
+
+
 # sequoia 3.0
 - numerous updates to Fortran code to improve assignment accuracy, including several
   bug fixes related to monogamous mating systems

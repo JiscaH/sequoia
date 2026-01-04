@@ -14,6 +14,8 @@
 #'   \code{TRUE}, ZeroToNA is automatically set to \code{FALSE}.
 #' @param DropNonSNPd  logical, remove any non-genotyped individuals (but keep
 #'   non-genotyped parents), & sort pedigree in order of \code{gID}.
+#' @param addParentRows add rows for any dams, sires, or individuals in
+#'   \code{gID} not yet occurring in the id column.
 #' @param FillParents logical, for individuals with only 1 parent assigned, set
 #'   the other parent to a dummy (without assigning siblings or grandparents).
 #'   Makes the pedigree compatible with R packages and software that requires
@@ -64,6 +66,7 @@ PedPolish <- function(Pedigree,
                       ZeroToNA=TRUE,
                       NAToZero=FALSE,
                       DropNonSNPd = TRUE,
+                      addParentRows = TRUE,
                       FillParents = FALSE,
                       KeepAllColumns = TRUE,
                       KeepAllRows = FALSE,
@@ -124,9 +127,9 @@ PedPolish <- function(Pedigree,
   if (!is.null(gID)) {
     n.shared.ids <- length(intersect(Ped[,1], as.character(gID)))
     if (n.shared.ids==0) {
-      stop("`GenoM` and `", PedName, "` do not share any common individuals", call. = FALSE)
+      stop("`GenoM`/`gID` and `", PedName, "` do not share any common individuals", call. = FALSE)
     } else if (n.shared.ids < length(gID)/10 && n.shared.ids < nrow(Ped)) {
-      cli::cli_alert_warning("`GenoM` and `{PedName}` share few common individuals")
+      cli::cli_alert_warning("`GenoM`/`gID` and `{PedName}` share few common individuals")
     }
   }
 
@@ -140,18 +143,19 @@ PedPolish <- function(Pedigree,
     if (NAToZero) Ped[is.na(Ped[,x]), x] <- 0
   }
   if (!KeepAllRows)  Ped <- unique(Ped[!is.na(Ped[,1]), ])
-  UID <- stats::na.exclude(unique(c(unlist(Ped[,1:3]),
-                                    gID)))
-  if (NAToZero) UID <- UID[UID != 0]
 
-  if (length(UID) > nrow(Ped)) {
-    Ped <- merge(data.frame(id = setdiff(UID, Ped$id),
-                            dam = ifelse(NAToZero, 0, NA),
-                            sire = ifelse(NAToZero, 0, NA),
-                            stringsAsFactors=FALSE),
-                 Ped,
-                 all = TRUE)
-  }
+  if (addParentRows) {
+    UID <- stats::na.exclude(unique(c(unlist(Ped[,1:3]), gID)))
+    if (NAToZero) UID <- UID[UID != 0]
+
+    if (length(UID) > nrow(Ped)) {
+      Ped <- merge(data.frame(id = setdiff(UID, Ped$id),
+                              dam = ifelse(NAToZero, 0, NA),
+                              sire = ifelse(NAToZero, 0, NA),
+                              stringsAsFactors=FALSE),
+                   Ped,
+                   all = TRUE)
+    }}
 
   if (FillParents) {
     PP <- c("dam", "sire")

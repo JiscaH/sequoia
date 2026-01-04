@@ -46,7 +46,7 @@ missing data for \code{InFormat}s 'col' and 'ped' only.}
 
 \item{sep}{vector with field separator strings that will be tried on
 \code{InFile}. Ignored if package \pkg{data.table} is present or if
-\code{InFormat='vcf'}. The \code{OutFile} separator uses the
+\code{InFormat='vcf'} or 'vcf.gz'. The \code{OutFile} separator uses the
 \code{\link[utils]{write.table}} default, i.e. one blank space.}
 
 \item{header}{a logical value indicating whether the file contains a header

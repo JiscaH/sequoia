@@ -10,6 +10,7 @@ PedPolish(
   ZeroToNA = TRUE,
   NAToZero = FALSE,
   DropNonSNPd = TRUE,
+  addParentRows = TRUE,
   FillParents = FALSE,
   KeepAllColumns = TRUE,
   KeepAllRows = FALSE,
@@ -32,6 +33,9 @@ PedPolish(
 
 \item{DropNonSNPd}{logical, remove any non-genotyped individuals (but keep
 non-genotyped parents), & sort pedigree in order of \code{gID}.}
+
+\item{addParentRows}{add rows for any dams, sires, or individuals in
+\code{gID} not yet occurring in the id column.}
 
 \item{FillParents}{logical, for individuals with only 1 parent assigned, set
 the other parent to a dummy (without assigning siblings or grandparents).

@@ -9,10 +9,9 @@
 #' @param Pedigree  dataframe, pedigree with the first three columns being id -
 #'   dam - sire. Column names are ignored, as are additional columns, except for
 #'   columns OHdam, OHsire, MEpair, LLRdam, LLRsire, LLRpair (plotting only).
-#' @param DumPrefix character vector of length 2 with prefixes for dummy dams
-#'   (mothers) and sires (fathers). Will be read from \code{SeqList}'s 'Specs'
-#'   if provided. Used to distinguish between dummies and non-dummies. Length 3
-#'   in case of hermaphrodites.
+#' @param DumPrefix character vector with prefixes for dummy dams (mothers) and
+#'   sires (fathers), used to distinguish between dummies and non-dummies. Will
+#'   be read from \code{SeqList}'s 'Specs' if provided.
 #' @param SNPd character vector with ids of SNP genotyped individuals. Only used
 #'   when \code{Pedigree} is provided instead of \code{SeqList}, to distinguish
 #'   between genetically assigned parents and 'observed' parents (e.g. observed
@@ -25,7 +24,6 @@
 #'   dummy individuals), 'sibships' (distribution of sibship sizes), 'LLR'
 #'   (log10-likelihood ratio parent/otherwise related), 'OH' (count of opposite
 #'   homozygote SNPs).
-#'
 #' @return A list with the following elements:
 #'   \item{PedSummary}{a 2-column matrix with basic summary statistics, similar
 #'   to what used to be returned by \pkg{Pedantics}' \code{pedStatSummary} (now
@@ -62,14 +60,20 @@
 #'   is a matrix with a number of rows equal to the maximum sibship size, and 3
 #'   columns, splitting by the type of parent: Genotyped, Dummy, or Observed.}
 #'
+#' @details  The list with results is returned \code{\link{invisible}}
+#'
 #' @seealso \code{\link{PlotSeqSum}} to plot the output of this function;
-#'  \code{\link{sequoia}} for pedigree reconstruction and links to other
-#'   functions.
+#'   \code{\link{PlotPropAssigned}} for just a barplot of the proportion of
+#'   individuals with genotyped/dummy/observed/no assigned dam/sire.
+#'
 #'
 #' @examples
 #' SummarySeq(Ped_griffin)
 #' sumry_grif <- SummarySeq(SeqOUT_griffin, Panels=c("G.parents", "OH"))
 #' sumry_grif$PedSummary
+#'
+#' # invisible results (nothing printed) when no output object is specified:
+#' SummarySeq(SeqOUT_griffin, Panels=c("LLR"))
 #'
 #' @export
 
@@ -95,7 +99,8 @@ SummarySeq <- function(SeqList = NULL,
   }
 
   # check input
-  Ped <- PedPolish(PedIN, ZeroToNA=TRUE, StopIfInvalid=FALSE)  # else problem when running sequoia()
+  Ped <- PedPolish(PedIN, ZeroToNA=TRUE, StopIfInvalid=FALSE)
+    #, addParentRows=addParentRows)  <-- conflicts with getGenerations()
   Ped$Sex <- with(Ped, ifelse(id %in% dam,
                               ifelse(id %in% sire,
                                      "Herm", "Female"),
@@ -117,6 +122,10 @@ SummarySeq <- function(SeqList = NULL,
     DumPrefix <- c(DumPrefix, "H0")
   if (is.null(SNPd) & "PedigreePar" %in% names(SeqList))
     SNPd <- SeqList$PedigreePar$id
+
+  AllPanels <- c('G.parents', 'D.parents', 'O.parents', 'sibships', 'LLR', 'OH')
+  if (!all(Panels %in% c('all', AllPanels)))  stop("Invalid value for 'Panels'")
+  # else issue caught by 'Plotting area too small, or other plotting problem'
 
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -260,7 +269,7 @@ SummarySeq <- function(SeqList = NULL,
   if (Plot) {
     img <- tryCatch(
       {
-        suppressWarnings(PlotSeqSum(SummaryOUT, PedIN, Panels))
+        suppressWarnings(PlotSeqSum(SummaryOUT, PedIN, as.character(Panels)))
       },
       error = function(e) {
         message("SummarySeq: Plotting area too small, or other plotting problem")
@@ -277,7 +286,6 @@ SummarySeq <- function(SeqList = NULL,
       }
     }
   }
-
   invisible( SummaryOUT )
 }
 
@@ -556,5 +564,3 @@ PlotSeqSum <- function(SeqSum, Pedigree=NULL, Panels="all", ask=TRUE)
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~
   par(oldpar)
 }
-
-

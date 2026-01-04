@@ -174,7 +174,8 @@ PlotPairLL <- function(PairLL,
 #'
 #' @importFrom graphics mtext abline rect polygon axis
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 LLRplot <- function(relx, rely, LLRU,
                     fcl, top, RelCol, bgcol,

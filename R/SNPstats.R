@@ -66,6 +66,7 @@ SnpStats <- function(GenoM,
                      calc_HWE = TRUE,
                      ErrFlavour)
 {
+  if (!(isTRUE(quiet) | isFALSE(quiet)))  stop("'quiet' must be TRUE or FALSE")
   if (!inherits(GenoM, 'matrix'))  stop("GenoM must be a matrix")
   GenoM[is.na(GenoM)] <- -9
   # missingness
@@ -161,7 +162,8 @@ SnpStats <- function(GenoM,
 #'
 #' @seealso \code{\link{SnpStats}}.
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 OHperSNP <- function(GenoM, Par, Dups=NULL)
 {
@@ -236,7 +238,8 @@ OHperSNP <- function(GenoM, Par, Dups=NULL)
 #'
 #' @return plots
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 
 PlotSnpStats <- function(OUT)

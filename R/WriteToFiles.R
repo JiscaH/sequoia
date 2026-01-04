@@ -52,11 +52,11 @@ writeSeq <- function(SeqList,
                      OutFormat = "txt",
                      folder = "Sequoia-OUT",
                      file = "Sequoia-OUT.xlsx",
-                     quiet = FALSE) {
-
+                     quiet = FALSE) 
+{
+  if (!(isTRUE(quiet) | isFALSE(quiet)))  stop("'quiet' must be TRUE or FALSE")
   if (!OutFormat %in% c("xls", "xlsx", "txt"))  stop("Invalid OutFormat")
   if (!inherits(SeqList, 'list'))  stop("SeqList should be a list")
-
 
   if (!is.null(MaybeRel)) {
     for (maybe in c("MaybeRel", "MaybeParent", "MaybeTrio")) {

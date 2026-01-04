@@ -209,7 +209,8 @@ GetRelM <- function(Pedigree = NULL,
 #'
 #' @useDynLib sequoia, .registration = TRUE
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 GetRelA <- function(Ped = NULL, GenBack = 1, patmat = TRUE, directed=TRUE,
                     List = FALSE)

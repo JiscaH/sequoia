@@ -426,7 +426,8 @@ DyadCompare <- function(Ped1 = NULL,
 #'   three-column matrix with column names id1 (x), id2 (the siblings), and
 #'   RC (the relatedness category, 'FS' or 'HS').
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 rc <- function(x, Ped) {
   names(Ped) <- c("id", "dam", "sire")

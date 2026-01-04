@@ -1,8 +1,8 @@
 Package: sequoia
 Type: Package
 Title: Pedigree Inference from SNPs
-Version: 3.0.3
-Date: 2025-08-14
+Version: 3.2.0
+Date: 2025-12-30
 Authors@R: c(person("Jisca", "Huisman", email = "jisca.huisman@gmail.com",
     role = c("aut", "cre")))
 Author: Jisca Huisman [aut, cre]
@@ -19,7 +19,7 @@ Imports:
     utils,
     graphics,
     cli
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Suggests: 
     openxlsx,
     knitr,

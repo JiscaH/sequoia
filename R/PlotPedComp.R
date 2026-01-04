@@ -89,7 +89,8 @@ PlotPedComp <- function(Counts, sameSize=FALSE) {
 #'
 #' @seealso \code{\link{PlotPedComp}}
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 VennSquares <- function(count, BL=c(0,0),
                         COL, withText=TRUE, withLegend=FALSE) {
@@ -164,7 +165,8 @@ VennSquares <- function(count, BL=c(0,0),
 #'
 #' @seealso \code{\link{PlotPedComp}, \link{VennSquares}}
 #'
-#' @keywords internal
+#' @keywords internal 
+#' @noRd
 
 CalcCorners <- function(count)   # IN: PedCompare() $Counts
 {
